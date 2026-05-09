@@ -1,0 +1,9 @@
+node_modules/
+client/node_modules/
+.env
+repos/
+uploads/
+temp/
+*.log
+dist/
+client/dist/

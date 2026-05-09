@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(npm install *)",
+      "Bash(npx vite *)",
+      "Bash(npm run *)",
+      "Bash(netstat -ano)",
+      "Bash(awk '{print $5}')",
+      "Bash(xargs -r taskkill /PID /F)",
+      "Bash(curl -s http://localhost:5000/api/health)",
+      "Bash(curl -s -X POST http://localhost:5000/api/commit/explain -H 'Content-Type: application/json' -d '{\"repoPath\":\"j:/buildlens ai/repos/nithya\",\"commitHash\":\"e82e97b\"}')"
+    ]
+  }
+}

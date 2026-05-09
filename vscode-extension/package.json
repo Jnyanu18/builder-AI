@@ -1,0 +1,47 @@
+{
+  "name": "buildlens-ai",
+  "displayName": "BuildLens AI",
+  "description": "Commit graph intelligence inside VS Code — explain, annotate, and validate your commits with AI",
+  "version": "0.1.0",
+  "publisher": "buildlens",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "activationEvents": [],
+  "main": "./extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "buildlens-sidebar",
+          "title": "BuildLens AI",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "buildlens-sidebar": [
+        {
+          "type": "webview",
+          "id": "buildlens.panel",
+          "name": "Commit Intelligence"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "buildlens.refresh",
+        "title": "BuildLens: Refresh Commits",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "buildlens.refresh",
+          "when": "view == buildlens.panel",
+          "group": "navigation"
+        }
+      ]
+    }
+  }
+}

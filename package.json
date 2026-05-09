@@ -1,0 +1,29 @@
+{
+  "name": "buildlens-ai",
+  "version": "1.0.0",
+  "description": "Repository-aware engineering intelligence platform.",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "nodemon server/index.js",
+    "start": "node server/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "fs-extra": "^11.3.5",
+    "glob": "^13.0.6",
+    "groq-sdk": "^1.1.2",
+    "madge": "^8.0.0",
+    "repomix": "^1.14.0",
+    "simple-git": "^3.36.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
