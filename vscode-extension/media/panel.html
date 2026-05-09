@@ -243,6 +243,24 @@
   .validation-box.warn   { border-color: var(--warning); }
   .validation-box.error  { border-color: var(--danger); }
 
+  /* ── REPO PICKER ── */
+  .repo-picker {
+    display: flex; gap: 6px; padding: 8px 10px;
+    border-bottom: 1px solid var(--border); background: var(--surface);
+  }
+  .repo-picker input {
+    flex: 1; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 5px; color: var(--text); font-size: 10px;
+    padding: 5px 8px; font-family: var(--font-mono);
+  }
+  .repo-picker input:focus { outline: none; border-color: var(--accent); }
+  .repo-picker button {
+    background: var(--accent); color: #fff; border: none;
+    border-radius: 5px; padding: 5px 10px; font-size: 12px;
+    cursor: pointer; font-weight: bold; transition: opacity .15s;
+  }
+  .repo-picker button:hover { opacity: .85; }
+
   /* ── SUMMARY BAR ── */
   .summary-bar {
     display: flex; gap: 10px; padding: 8px 12px;
@@ -274,6 +292,12 @@
 <div class="status-bar">
   <div class="status-dot" id="statusDot"></div>
   <span id="statusText">Connecting to backend…</span>
+</div>
+
+<!-- REPO PICKER -->
+<div class="repo-picker" id="repoPicker">
+  <input id="repoPickerInput" type="text" placeholder="Paste GitHub URL or local path…" />
+  <button onclick="loadFromPicker()">→</button>
 </div>
 
 <!-- SUMMARY BAR (hidden until loaded) -->
@@ -360,8 +384,10 @@ function showState(name) {
 }
 
 // ── Load commits ──────────────────────────────────────────────
-async function loadCommits() {
-  if (!workspacePath) { showState('empty'); return; }
+async function loadCommits(source, value) {
+  const src = source || 'local';
+  const val = value || workspacePath;
+  if (!val) { showState('empty'); return; }
   showState('loading');
   setStatus('loading', 'Fetching commits…');
 
@@ -369,7 +395,7 @@ async function loadCommits() {
     const res = await fetch(`${API}/api/analyze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ source: 'local', value: workspacePath, plan: null })
+      body: JSON.stringify({ source: src, value: val, plan: null })
     });
     const data = await res.json();
     if (!res.ok || !data.commits) throw new Error(data.error || 'No commits returned');
@@ -594,9 +620,19 @@ async function validateNote(commit) {
 }
 
 // ── Helpers ───────────────────────────────────────────────────
-function openBrowser() {
-  vscode.postMessage({ type: 'openBrowser' });
+function openBrowser() { vscode.postMessage({ type: 'openBrowser' }); }
+
+function loadFromPicker() {
+  const val = document.getElementById('repoPickerInput').value.trim();
+  if (!val) return;
+  const source = val.startsWith('http') ? 'github' : 'local';
+  workspacePath = val;
+  loadCommits(source, val);
 }
+
+// Override loadCommits to accept source/value
+const _origLoadCommits = loadCommits;
+
 
 function escHtml(str) {
   return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');

@@ -2,6 +2,7 @@ const express = require("express");
 const path = require("path");
 const simpleGit = require("simple-git");
 const fs = require("fs-extra");
+const { track } = require("../services/analytics");
 
 const router = express.Router();
 
@@ -85,6 +86,7 @@ router.post("/analyze", async (req, res) => {
       })
     );
 
+    track("repo_analyzed", { repoPath, commitCount: commits.length }).catch(() => {});
     res.json({ success: true, repoPath, commits, plan: plan || null });
   } catch (err) {
     console.error(err);

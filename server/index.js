@@ -10,6 +10,8 @@ const analysisRoutes = require("./routes/analysisRoutes");
 const analyzeRoutes = require("./routes/analyzeRoutes");
 const commitRoutes = require("./routes/commitRoutes");
 const planCommitRoutes = require("./routes/planCommitRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");
+const integrationsRoutes = require("./routes/integrationsRoutes");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -38,6 +40,8 @@ app.use("/api/repo", repoRoutes);
 app.use("/api", analyzeRoutes);
 app.use("/api", commitRoutes);
 app.use("/api", planCommitRoutes);
+app.use("/api", analyticsRoutes);
+app.use("/api", integrationsRoutes);
 app.use("/api/analysis", analysisRoutes);
 
 app.use((err, req, res, next) => {

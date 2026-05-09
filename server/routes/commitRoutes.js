@@ -1,6 +1,7 @@
 const express = require("express");
 const simpleGit = require("simple-git");
 const Groq = require("groq-sdk");
+const { track } = require("../services/analytics");
 
 const router = express.Router();
 
@@ -45,7 +46,9 @@ ${diff.slice(0, 8000)}
       messages: [{ role: "user", content: prompt }],
     });
 
-    res.json({ explanation: completion.choices[0].message.content });
+    const explanation = completion.choices[0].message.content;
+    track("commit_explained", { repoPath, commitHash }).catch(() => {});
+    res.json({ explanation });
   } catch (err) {
     console.error(err);
     res.json({ explanation: `AI unavailable: ${err.message}` });
