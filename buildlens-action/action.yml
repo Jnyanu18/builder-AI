@@ -1,0 +1,15 @@
+name: BuildLens AI Validator
+description: Validates if a PR actually implements what the linked issue / PR plan describes.
+
+inputs:
+  groq-api-key:
+    description: Groq API key used to analyze the PR diff + linked issue.
+    required: true
+  github-token:
+    description: GitHub token for reading PR data and posting comments.
+    required: true
+
+runs:
+  using: node20
+  main: index.js
+

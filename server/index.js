@@ -12,6 +12,9 @@ const commitRoutes = require("./routes/commitRoutes");
 const planCommitRoutes = require("./routes/planCommitRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const integrationsRoutes = require("./routes/integrationsRoutes");
+const workSessionRoutes = require("./routes/workSessionRoutes");
+const intentGraphRoutes = require("./routes/intentGraphRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -42,7 +45,10 @@ app.use("/api", commitRoutes);
 app.use("/api", planCommitRoutes);
 app.use("/api", analyticsRoutes);
 app.use("/api", integrationsRoutes);
+app.use("/api", workSessionRoutes);
 app.use("/api/analysis", analysisRoutes);
+app.use("/api/intent-graph", intentGraphRoutes);
+app.use("/api/review", reviewRoutes());
 
 app.use((err, req, res, next) => {
   console.error(err);
@@ -54,3 +60,5 @@ app.use((err, req, res, next) => {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
+

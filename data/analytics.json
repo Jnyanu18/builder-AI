@@ -1,1 +1,42 @@
-{ "events": [] }
+{
+  "events": [
+    {
+      "type": "commit_explained",
+      "data": {
+        "repoPath": "j:\\buildlens ai",
+        "commitHash": "663dda8b10f2f507328e2d9927d92f9fa357d153"
+      },
+      "timestamp": "2026-05-10T09:16:44.698Z"
+    },
+    {
+      "type": "commit_explained",
+      "data": {
+        "repoPath": "j:\\buildlens ai",
+        "commitHash": "628709c8247f459dc58e8c45a9cd46238b8598b1"
+      },
+      "timestamp": "2026-05-10T09:16:20.261Z"
+    },
+    {
+      "type": "commit_explained",
+      "data": {
+        "repoPath": "/path/to/frontend-react",
+        "commitHash": "a1b2c3d"
+      },
+      "timestamp": "2026-05-10T10:00:00Z"
+    },
+    {
+      "type": "repo_analyzed",
+      "data": {
+        "repoPath": "/path/to/frontend-react"
+      },
+      "timestamp": "2026-05-10T09:00:00Z"
+    },
+    {
+      "type": "note_validated",
+      "data": {
+        "repoPath": "/path/to/backend-api"
+      },
+      "timestamp": "2026-05-09T14:00:00Z"
+    }
+  ]
+}

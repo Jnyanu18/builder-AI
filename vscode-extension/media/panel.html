@@ -1,642 +1,1146 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8" />
-<meta http-equiv="Content-Security-Policy"
-  content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src http://localhost:5000 http://localhost:5173;" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>BuildLens AI</title>
-<style>
-  :root {
-    --bg:      #0d1117;
-    --surface: #161b22;
-    --surf2:   #21262d;
-    --border:  #30363d;
-    --text:    #c9d1d9;
-    --muted:   #8b949e;
-    --accent:  #58a6ff;
-    --success: #3fb950;
-    --warning: #d29922;
-    --danger:  #f85149;
-    --font-mono: "Cascadia Code", "Fira Code", "Consolas", monospace;
-  }
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src http://localhost:5000 http://localhost:5173;" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BuildLens AI</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surf2: #21262d;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --success: #3fb950;
+      --warning: #d29922;
+      --danger: #f85149;
+      --font-mono: "Cascadia Code", "Fira Code", "Consolas", monospace;
+    }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: 12px;
-    overflow-x: hidden;
-  }
+    body {
+      background: linear-gradient(135deg, var(--bg) 0%, #0a0e17 100%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 12px;
+      overflow-x: hidden;
+    }
 
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
 
-  /* ── HEADER ── */
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 12px 8px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-  .header-left { display: flex; align-items: center; gap: 6px; }
-  .header-logo { display: flex; gap: 1px; }
-  .logo-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    animation: pulse 2s infinite;
-  }
-  .logo-dot:nth-child(1) { background: var(--success); animation-delay: 0s; }
-  .logo-dot:nth-child(2) { background: var(--accent);  animation-delay: .2s; }
-  .logo-dot:nth-child(3) { background: var(--warning); animation-delay: .4s; }
-  @keyframes pulse {
-    0%,100% { opacity: 1; transform: scale(1); }
-    50%      { opacity: .5; transform: scale(.7); }
-  }
-  .header-title { font-size: 11px; font-weight: 600; color: var(--text); letter-spacing: .02em; }
-  .btn-browser {
-    font-size: 10px; color: var(--accent); background: none; border: 1px solid var(--border);
-    border-radius: 4px; padding: 3px 7px; cursor: pointer; transition: background .15s;
-  }
-  .btn-browser:hover { background: var(--surf2); }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
 
-  /* ── STATUS BAR ── */
-  .status-bar {
-    display: flex; align-items: center; gap: 8px;
-    padding: 6px 12px; border-bottom: 1px solid var(--border);
-    background: var(--bg); font-size: 10px; color: var(--muted);
-  }
-  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
-  .status-dot.connected { background: var(--success); box-shadow: 0 0 6px var(--success); }
-  .status-dot.error     { background: var(--danger); }
-  .status-dot.loading   { background: var(--warning); animation: blink 1s infinite; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+      transition: background .2s;
+    }
 
-  /* ── EMPTY / LOADING ── */
-  .center-state {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 40px 16px; gap: 10px; text-align: center;
-  }
-  .spinner {
-    width: 24px; height: 24px;
-    border: 2px solid var(--border); border-top-color: var(--accent);
-    border-radius: 50%; animation: spin .8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .empty-icon { font-size: 28px; opacity: .4; }
-  .empty-title { font-size: 12px; font-weight: 600; color: var(--text); }
-  .empty-sub   { font-size: 10px; color: var(--muted); line-height: 1.5; }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent);
+    }
 
-  .btn-primary {
-    background: var(--accent); color: #fff; border: none;
-    border-radius: 5px; padding: 6px 14px; font-size: 11px;
-    font-weight: 600; cursor: pointer; transition: opacity .15s;
-  }
-  .btn-primary:hover { opacity: .85; }
-  .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+    /* ── ANIMATIONS ── */
+    @keyframes pulse {
 
-  /* ── COMMIT GRAPH ── */
-  .graph-wrap { padding: 12px 10px 40px; }
+      0%,
+      100% {
+        opacity: 1;
+      }
 
-  .commit-node { display: flex; flex-direction: column; align-items: center; }
+      50% {
+        opacity: .5;
+      }
+    }
 
-  /* connector between nodes */
-  .connector {
-    display: flex; flex-direction: column; align-items: center;
-    padding: 4px 0; position: relative;
-  }
-  .conn-line {
-    width: 2px; height: 20px;
-    background: linear-gradient(to bottom, var(--border), var(--accent));
-  }
-  .conn-arrow {
-    width: 0; height: 0;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 7px solid var(--accent);
-    opacity: .7;
-  }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
 
-  /* commit card */
-  .commit-card {
-    width: 100%;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    border-left-width: 3px;
-    transition: border-color .2s, box-shadow .2s;
-    overflow: hidden;
-  }
-  .commit-card:hover { box-shadow: 0 2px 12px rgba(88,166,255,.08); }
-  .commit-card.size-sm { border-left-color: var(--success); }
-  .commit-card.size-md { border-left-color: var(--warning); }
-  .commit-card.size-lg { border-left-color: var(--danger); }
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
 
-  .card-top {
-    padding: 9px 10px 7px;
-    cursor: pointer;
-    user-select: none;
-  }
-  .card-row1 { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 4px; }
-  .commit-hash {
-    font-family: var(--font-mono); font-size: 10px;
-    background: var(--surf2); color: var(--accent);
-    padding: 1px 5px; border-radius: 3px; flex-shrink: 0;
-  }
-  .commit-date { font-size: 9px; color: var(--muted); flex-shrink: 0; }
-  .commit-msg {
-    font-size: 11px; font-weight: 500; color: var(--text);
-    line-height: 1.35; margin-bottom: 5px;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-  }
-  .card-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .commit-author { font-size: 10px; color: var(--muted); }
-  .stat-badge {
-    font-size: 9px; font-family: var(--font-mono);
-    padding: 1px 5px; border-radius: 3px;
-  }
-  .stat-add { background: rgba(63,185,80,.12); color: var(--success); }
-  .stat-del { background: rgba(248,81,73,.12); color: var(--danger); }
-  .stat-files { background: var(--surf2); color: var(--muted); }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
 
-  /* action buttons row */
-  .card-actions {
-    display: flex; gap: 6px; padding: 0 10px 8px; flex-wrap: wrap;
-  }
-  .btn-action {
-    font-size: 10px; padding: 3px 8px;
-    border-radius: 4px; cursor: pointer; transition: opacity .15s;
-    font-weight: 500; border: none;
-  }
-  .btn-action:hover { opacity: .8; }
-  .btn-explain   { background: rgba(88,166,255,.15); color: var(--accent); }
-  .btn-note-tog  { background: var(--surf2); color: var(--muted); border: 1px solid var(--border); }
-  .btn-note-tog.active { color: var(--warning); border-color: var(--warning); background: rgba(210,153,34,.1); }
+    @keyframes glow {
 
-  /* expand area */
-  .card-expand {
-    border-top: 1px solid var(--border);
-    display: none;
-  }
-  .card-expand.open { display: block; }
+      0%,
+      100% {
+        box-shadow: 0 0 8px rgba(88, 166, 255, .2);
+      }
 
-  /* explanation */
-  .explanation-box {
-    padding: 10px;
-    font-size: 11px; line-height: 1.6; color: var(--text);
-    white-space: pre-wrap;
-  }
-  .explanation-loading {
-    display: flex; align-items: center; gap: 8px;
-    padding: 10px; color: var(--muted); font-size: 11px;
-  }
+      50% {
+        box-shadow: 0 0 16px rgba(88, 166, 255, .4);
+      }
+    }
 
-  /* note area */
-  .note-area { padding: 10px; }
-  .note-label {
-    font-size: 9px; text-transform: uppercase; letter-spacing: .05em;
-    color: var(--muted); margin-bottom: 5px; font-weight: 600;
-  }
-  .note-textarea {
-    width: 100%; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 5px; color: var(--text); font-size: 11px;
-    font-family: inherit; padding: 6px 8px; resize: vertical; min-height: 56px;
-    line-height: 1.5;
-  }
-  .note-textarea:focus { outline: none; border-color: var(--accent); }
-  .note-actions { display: flex; gap: 6px; margin-top: 6px; align-items: center; }
-  .btn-save-note {
-    font-size: 10px; padding: 3px 9px; border-radius: 4px;
-    background: var(--surf2); color: var(--muted);
-    border: 1px solid var(--border); cursor: pointer;
-  }
-  .btn-save-note:hover { color: var(--text); }
-  .btn-validate {
-    font-size: 10px; padding: 3px 9px; border-radius: 4px;
-    background: rgba(88,166,255,.12); color: var(--accent);
-    border: none; cursor: pointer;
-  }
-  .btn-validate:hover { background: rgba(88,166,255,.22); }
-  .btn-validate:disabled { opacity: .4; cursor: not-allowed; }
-  .note-saved {
-    font-size: 10px; color: var(--success); opacity: 0;
-    transition: opacity .3s;
-  }
-  .note-saved.show { opacity: 1; }
+    /* ── HEADER ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 14px 12px;
+      border-bottom: 1px solid rgba(48, 54, 61, .4);
+      background: linear-gradient(to bottom, rgba(22, 27, 34, .8), rgba(13, 17, 23, .4));
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
 
-  /* validation result */
-  .validation-box {
-    margin-top: 8px; padding: 8px 10px;
-    background: var(--bg); border-radius: 5px;
-    border: 1px solid var(--border);
-    font-size: 11px; line-height: 1.6; color: var(--text);
-    white-space: pre-wrap;
-  }
-  .validation-box.ok     { border-color: var(--success); }
-  .validation-box.warn   { border-color: var(--warning); }
-  .validation-box.error  { border-color: var(--danger); }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-  /* ── REPO PICKER ── */
-  .repo-picker {
-    display: flex; gap: 6px; padding: 8px 10px;
-    border-bottom: 1px solid var(--border); background: var(--surface);
-  }
-  .repo-picker input {
-    flex: 1; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 5px; color: var(--text); font-size: 10px;
-    padding: 5px 8px; font-family: var(--font-mono);
-  }
-  .repo-picker input:focus { outline: none; border-color: var(--accent); }
-  .repo-picker button {
-    background: var(--accent); color: #fff; border: none;
-    border-radius: 5px; padding: 5px 10px; font-size: 12px;
-    cursor: pointer; font-weight: bold; transition: opacity .15s;
-  }
-  .repo-picker button:hover { opacity: .85; }
+    .header-logo {
+      display: flex;
+      gap: 2px;
+    }
 
-  /* ── SUMMARY BAR ── */
-  .summary-bar {
-    display: flex; gap: 10px; padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface); flex-wrap: wrap;
-  }
-  .summary-chip {
-    font-size: 10px; display: flex; align-items: center; gap: 4px; color: var(--muted);
-  }
-  .chip-dot { width: 7px; height: 7px; border-radius: 50%; }
-</style>
+    .logo-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      animation: pulse 2.5s infinite;
+      box-shadow: 0 0 6px currentColor;
+    }
+
+    .logo-dot:nth-child(1) {
+      background: var(--success);
+      animation-delay: 0s;
+    }
+
+    .logo-dot:nth-child(2) {
+      background: var(--accent);
+      animation-delay: .2s;
+    }
+
+    .logo-dot:nth-child(3) {
+      background: var(--warning);
+      animation-delay: .4s;
+    }
+
+    .header-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: .03em;
+      background: linear-gradient(to right, var(--accent), var(--success));
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .btn-browser {
+      font-size: 10px;
+      color: var(--accent);
+      background: rgba(88, 166, 255, .1);
+      border: 1px solid rgba(88, 166, 255, .3);
+      border-radius: 5px;
+      padding: 4px 8px;
+      cursor: pointer;
+      transition: all .2s;
+      font-weight: 600;
+    }
+
+    .btn-browser:hover {
+      background: rgba(88, 166, 255, .2);
+      border-color: var(--accent);
+    }
+
+    /* ── STATUS BAR ── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(48, 54, 61, .3);
+      background: rgba(13, 17, 23, .4);
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: all .3s;
+    }
+
+    .status-dot.connected {
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success), inset 0 0 4px rgba(63, 185, 80, .5);
+    }
+
+    .status-dot.error {
+      background: var(--danger);
+      box-shadow: 0 0 8px var(--danger);
+    }
+
+    .status-dot.loading {
+      background: var(--warning);
+      animation: pulse 1s infinite;
+    }
+
+    /* ── NAVIGATION ── */
+    .nav {
+      display: flex;
+      border-bottom: 1px solid rgba(48, 54, 61, .3);
+      background: linear-gradient(to right, rgba(22, 27, 34, .5), transparent);
+      padding: 0 8px;
+      gap: 2px;
+    }
+
+    .nav-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 11px 6px;
+      cursor: pointer;
+      transition: all .2s;
+      text-align: center;
+      position: relative;
+    }
+
+    .nav-btn:hover {
+      color: var(--text);
+      background: rgba(88, 166, 255, .08);
+    }
+
+    .nav-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      background: rgba(88, 166, 255, .1);
+    }
+
+    .nav-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(to right, var(--accent), var(--success));
+    }
+
+    .section {
+      display: none;
+    }
+
+    .section.active {
+      display: block;
+      animation: slideIn .3s ease-out;
+    }
+
+    /* ── EMPTY / LOADING ── */
+    .center-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 16px;
+      gap: 12px;
+      text-align: center;
+    }
+
+    .spinner {
+      width: 26px;
+      height: 26px;
+      border: 2.5px solid rgba(88, 166, 255, .2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    .empty-icon {
+      font-size: 32px;
+      opacity: .5;
+      animation: pulse 3s infinite;
+    }
+
+    .empty-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .empty-sub {
+      font-size: 10px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--success));
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .2s;
+      box-shadow: 0 2px 8px rgba(88, 166, 255, .2);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(88, 166, 255, .4);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ── COMMIT GRAPH ── */
+    .graph-wrap {
+      padding: 14px 10px 50px;
+    }
+
+    .commit-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: slideIn .3s ease-out;
+    }
+
+    .connector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 6px 0;
+      position: relative;
+    }
+
+    .conn-line {
+      width: 2px;
+      height: 22px;
+      background: linear-gradient(to bottom, rgba(48, 54, 61, .5), var(--accent));
+    }
+
+    .conn-arrow {
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 7px solid var(--accent);
+      opacity: .8;
+    }
+
+    .commit-card {
+      width: 100%;
+      background: linear-gradient(135deg, rgba(22, 27, 34, .6), rgba(33, 38, 45, .3));
+      border: 1px solid rgba(48, 54, 61, .5);
+      border-radius: 9px;
+      border-left-width: 3px;
+      transition: all .2s;
+      overflow: hidden;
+      backdrop-filter: blur(4px);
+    }
+
+    .commit-card:hover {
+      border-color: rgba(88, 166, 255, .4);
+      box-shadow: 0 4px 16px rgba(88, 166, 255, .12);
+      transform: translateX(2px);
+    }
+
+    .commit-card.size-sm {
+      border-left-color: var(--success);
+    }
+
+    .commit-card.size-md {
+      border-left-color: var(--warning);
+    }
+
+    .commit-card.size-lg {
+      border-left-color: var(--danger);
+    }
+
+    .card-top {
+      padding: 11px 10px 8px;
+      cursor: pointer;
+      user-select: none;
+      transition: background .2s;
+    }
+
+    .card-top:hover {
+      background: rgba(88, 166, 255, .05);
+    }
+
+    .card-row1 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 5px;
+    }
+
+    .commit-hash {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      background: rgba(88, 166, 255, .12);
+      color: var(--accent);
+      padding: 2px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      font-weight: 600;
+    }
+
+    .commit-date {
+      font-size: 8px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .commit-msg {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.35;
+      margin-bottom: 5px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .commit-author {
+      font-size: 9px;
+      color: var(--muted);
+    }
+
+    .stat-badge {
+      font-size: 8px;
+      font-family: var(--font-mono);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    .stat-add {
+      background: rgba(63, 185, 80, .15);
+      color: var(--success);
+      border: 1px solid rgba(63, 185, 80, .3);
+    }
+
+    .stat-del {
+      background: rgba(248, 81, 73, .15);
+      color: var(--danger);
+      border: 1px solid rgba(248, 81, 73, .3);
+    }
+
+    .stat-files {
+      background: rgba(48, 54, 61, .5);
+      color: var(--muted);
+      border: 1px solid rgba(48, 54, 61, .6);
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 6px;
+      padding: 0 10px 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-action {
+      font-size: 9px;
+      padding: 4px 9px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all .15s;
+      font-weight: 600;
+      border: 1px solid transparent;
+    }
+
+    .btn-action:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-explain {
+      background: rgba(88, 166, 255, .15);
+      color: var(--accent);
+      border-color: rgba(88, 166, 255, .3);
+    }
+
+    .btn-explain:hover {
+      background: rgba(88, 166, 255, .25);
+      border-color: var(--accent);
+    }
+
+    .btn-note-tog {
+      background: rgba(48, 54, 61, .6);
+      color: var(--muted);
+      border: 1px solid rgba(48, 54, 61, .7);
+    }
+
+    .btn-note-tog:hover {
+      background: rgba(48, 54, 61, .8);
+    }
+
+    .btn-note-tog.active {
+      color: var(--warning);
+      border-color: var(--warning);
+      background: rgba(210, 153, 34, .15);
+    }
+
+    .card-expand {
+      border-top: 1px solid rgba(48, 54, 61, .3);
+      display: none;
+    }
+
+    .card-expand.open {
+      display: block;
+    }
+
+    .explanation-box {
+      padding: 11px;
+      font-size: 10px;
+      line-height: 1.6;
+      color: var(--text);
+      white-space: pre-wrap;
+      border-left: 2px solid var(--accent);
+      background: rgba(88, 166, 255, .05);
+    }
+
+    .explanation-loading {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .note-area {
+      padding: 10px;
+      border-top: 1px solid rgba(48, 54, 61, .3);
+    }
+
+    .note-label {
+      font-size: 8px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+
+    .note-textarea {
+      width: 100%;
+      background: rgba(13, 17, 23, .6);
+      border: 1px solid rgba(48, 54, 61, .4);
+      border-radius: 5px;
+      color: var(--text);
+      font-size: 10px;
+      font-family: inherit;
+      padding: 7px 9px;
+      resize: vertical;
+      min-height: 60px;
+      line-height: 1.5;
+      transition: all .2s;
+    }
+
+    .note-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: rgba(13, 17, 23, .8);
+      box-shadow: 0 0 8px rgba(88, 166, 255, .1);
+    }
+
+    .note-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 7px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-save-note {
+      font-size: 9px;
+      padding: 4px 10px;
+      border-radius: 5px;
+      background: rgba(88, 166, 255, .1);
+      color: var(--accent);
+      border: 1px solid rgba(88, 166, 255, .3);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all .2s;
+    }
+
+    .btn-save-note:hover {
+      background: rgba(88, 166, 255, .2);
+      border-color: var(--accent);
+    }
+
+    .btn-validate {
+      font-size: 9px;
+      padding: 4px 10px;
+      border-radius: 5px;
+      background: rgba(63, 185, 80, .1);
+      color: var(--success);
+      border: 1px solid rgba(63, 185, 80, .3);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all .2s;
+    }
+
+    .btn-validate:hover {
+      background: rgba(63, 185, 80, .2);
+      border-color: var(--success);
+    }
+
+    .btn-validate:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+    }
+
+    .note-saved {
+      font-size: 9px;
+      color: var(--success);
+      opacity: 0;
+      transition: opacity .3s;
+      font-weight: 600;
+    }
+
+    .note-saved.show {
+      opacity: 1;
+    }
+
+    .validation-box {
+      margin-top: 8px;
+      padding: 10px 11px;
+      background: rgba(13, 17, 23, .6);
+      border-radius: 5px;
+      border-left: 2px solid var(--border);
+      font-size: 10px;
+      line-height: 1.6;
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+
+    .validation-box.ok {
+      border-left-color: var(--success);
+      background: rgba(63, 185, 80, .08);
+    }
+
+    .validation-box.warn {
+      border-left-color: var(--warning);
+      background: rgba(210, 153, 34, .08);
+    }
+
+    .validation-box.error {
+      border-left-color: var(--danger);
+      background: rgba(248, 81, 73, .08);
+    }
+
+    /* ── WORK SESSION ── */
+    .work-session-wrap {
+      padding: 16px 12px;
+    }
+
+    .session-card {
+      background: linear-gradient(135deg, rgba(22, 27, 34, .6), rgba(33, 38, 45, .3));
+      border: 1px solid rgba(88, 166, 255, .2);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+      backdrop-filter: blur(4px);
+      transition: all .2s;
+    }
+
+    .session-card:hover {
+      border-color: rgba(88, 166, 255, .4);
+      box-shadow: 0 4px 12px rgba(88, 166, 255, .1);
+    }
+
+    .session-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      background: linear-gradient(to right, var(--accent), var(--success));
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .session-textarea {
+      width: 100%;
+      background: rgba(13, 17, 23, .6);
+      border: 1px solid rgba(48, 54, 61, .4);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 11px;
+      padding: 11px;
+      min-height: 110px;
+      resize: vertical;
+      margin-bottom: 14px;
+      transition: all .2s;
+    }
+
+    .session-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 8px rgba(88, 166, 255, .15);
+    }
+
+    .session-btn-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .score-circle {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      border: 3px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 800;
+      margin: 0 auto 14px;
+      color: var(--accent);
+      background: rgba(88, 166, 255, .08);
+      box-shadow: 0 0 16px rgba(88, 166, 255, .2);
+    }
+
+    .issue-tag {
+      display: inline-block;
+      font-size: 8px;
+      padding: 3px 7px;
+      border-radius: 4px;
+      margin-right: 5px;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+
+    .issue-critical {
+      background: rgba(248, 81, 73, .15);
+      color: var(--danger);
+      border: 1px solid rgba(248, 81, 73, .3);
+    }
+
+    /* ── INTENT GRAPH ── */
+    .intent-wrap {
+      padding: 16px 12px;
+    }
+
+    .intent-input-card {
+      background: linear-gradient(135deg, rgba(22, 27, 34, .6), rgba(33, 38, 45, .3));
+      border: 1px solid rgba(88, 166, 255, .2);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+      backdrop-filter: blur(4px);
+    }
+
+    .intent-btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent), var(--success));
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all .2s;
+      box-shadow: 0 2px 8px rgba(88, 166, 255, .2);
+    }
+
+    .intent-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(88, 166, 255, .4);
+    }
+
+    .result-card {
+      background: linear-gradient(135deg, rgba(22, 27, 34, .5), rgba(33, 38, 45, .2));
+      border: 1px solid rgba(48, 54, 61, .4);
+      border-radius: 12px;
+      padding: 13px;
+      margin-bottom: 11px;
+      border-left: 3px solid var(--border);
+      transition: all .2s;
+    }
+
+    .result-card:hover {
+      border-color: rgba(88, 166, 255, .3);
+      transform: translateX(2px);
+    }
+
+    .result-card.auto-accept {
+      border-left-color: var(--success);
+    }
+
+    .result-card.review {
+      border-left-color: var(--warning);
+    }
+
+    .result-card.flag {
+      border-left-color: var(--danger);
+    }
+
+    .result-req {
+      font-weight: 700;
+      font-size: 11px;
+      margin-bottom: 5px;
+    }
+
+    .result-file {
+      font-family: var(--font-mono);
+      font-size: 8px;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .result-exp {
+      font-size: 10px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .conf-badge {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    /* ── REPO PICKER ── */
+    .repo-picker {
+      display: flex;
+      gap: 7px;
+      padding: 9px 10px;
+      border-bottom: 1px solid rgba(48, 54, 61, .3);
+      background: linear-gradient(to bottom, rgba(22, 27, 34, .6), rgba(13, 17, 23, .3));
+    }
+
+    .repo-picker input {
+      flex: 1;
+      background: rgba(13, 17, 23, .6);
+      border: 1px solid rgba(48, 54, 61, .4);
+      border-radius: 5px;
+      color: var(--text);
+      font-size: 10px;
+      padding: 6px 9px;
+      font-family: var(--font-mono);
+      transition: all .2s;
+    }
+
+    .repo-picker input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 8px rgba(88, 166, 255, .15);
+    }
+
+    .repo-picker button {
+      background: linear-gradient(135deg, var(--accent), var(--success));
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      padding: 6px 11px;
+      font-size: 11px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all .2s;
+      box-shadow: 0 2px 6px rgba(88, 166, 255, .2);
+    }
+
+    .repo-picker button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(88, 166, 255, .35);
+    }
+
+    /* ── SUMMARY BAR ── */
+    .summary-bar {
+      display: flex;
+      gap: 10px;
+      padding: 9px 12px;
+      border-bottom: 1px solid rgba(48, 54, 61, .3);
+      background: linear-gradient(to right, rgba(22, 27, 34, .4), transparent);
+      flex-wrap: wrap;
+    }
+
+    .summary-chip {
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .chip-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      box-shadow: 0 0 4px currentColor;
+    }
+  </style>
 </head>
+
 <body>
 
-<!-- HEADER -->
-<div class="header">
-  <div class="header-left">
-    <div class="header-logo">
-      <div class="logo-dot"></div>
-      <div class="logo-dot"></div>
-      <div class="logo-dot"></div>
-    </div>
-    <span class="header-title">BuildLens AI</span>
-  </div>
-  <button class="btn-browser" onclick="openBrowser()">⬡ Open Dashboard</button>
-</div>
-
-<!-- STATUS BAR -->
-<div class="status-bar">
-  <div class="status-dot" id="statusDot"></div>
-  <span id="statusText">Connecting to backend…</span>
-</div>
-
-<!-- REPO PICKER -->
-<div class="repo-picker" id="repoPicker">
-  <input id="repoPickerInput" type="text" placeholder="Paste GitHub URL or local path…" />
-  <button onclick="loadFromPicker()">→</button>
-</div>
-
-<!-- SUMMARY BAR (hidden until loaded) -->
-<div class="summary-bar" id="summaryBar" style="display:none">
-  <div class="summary-chip"><div class="chip-dot" style="background:var(--success)"></div><span id="sumSmall">0 small</span></div>
-  <div class="summary-chip"><div class="chip-dot" style="background:var(--warning)"></div><span id="sumMed">0 medium</span></div>
-  <div class="summary-chip"><div class="chip-dot" style="background:var(--danger)"></div><span id="sumLarge">0 large</span></div>
-  <div class="summary-chip" style="margin-left:auto"><span id="sumTotal" style="color:var(--text);font-weight:600"></span></div>
-</div>
-
-<!-- MAIN AREA -->
-<div id="main">
-  <div class="center-state" id="loadingState" style="display:none">
-    <div class="spinner"></div>
-    <div class="empty-title">Loading commits…</div>
-    <div class="empty-sub">Reading your git history</div>
-  </div>
-
-  <div class="center-state" id="emptyState">
-    <div class="empty-icon">⬡</div>
-    <div class="empty-title">No workspace detected</div>
-    <div class="empty-sub">Open a git repository folder in VS Code, then click Load.</div>
-    <button class="btn-primary" onclick="loadCommits()">Load Commits</button>
-  </div>
-
-  <div class="center-state" id="errorState" style="display:none">
-    <div class="empty-icon">⚠</div>
-    <div class="empty-title" id="errorTitle">Error</div>
-    <div class="empty-sub" id="errorSub"></div>
-    <div style="width:100%;margin-top:10px">
-      <input id="customPath" type="text" placeholder="Or enter a repo path manually…"
-        style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:5px;
-               color:var(--text);font-size:11px;padding:6px 8px;margin-bottom:8px" />
-      <button class="btn-primary" style="width:100%" onclick="loadFromCustomPath()">Load that repo</button>
-    </div>
-    <button style="margin-top:6px;background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer" onclick="loadCommits()">↺ Retry current path</button>
-  </div>
-
-  <div id="graphArea" style="display:none">
-    <div class="graph-wrap" id="commitGraph"></div>
-  </div>
-</div>
-
-<script>
-const vscode = acquireVsCodeApi();
-const API = 'http://localhost:5000';
-
-let workspacePath = '';
-let commits = [];
-let notes = {};
-let expandedCards = new Set();
-
-// ── VS Code messages ──────────────────────────────────────────
-window.addEventListener('message', e => {
-  const msg = e.data;
-  if (msg.type === 'init') {
-    workspacePath = msg.workspacePath || '';
-    notes = msg.notes || {};
-    if (workspacePath) {
-      loadCommits();
-    } else {
-      showState('empty');
-      setStatus('idle', 'No workspace folder open');
-    }
-  }
-});
-
-// Signal ready
-vscode.postMessage({ type: 'ready' });
-
-// ── Status helpers ────────────────────────────────────────────
-function setStatus(state, text) {
-  const dot = document.getElementById('statusDot');
-  dot.className = 'status-dot ' + (state === 'ok' ? 'connected' : state === 'error' ? 'error' : state === 'loading' ? 'loading' : '');
-  document.getElementById('statusText').textContent = text;
-}
-
-function showState(name) {
-  document.getElementById('loadingState').style.display = name === 'loading' ? 'flex' : 'none';
-  document.getElementById('emptyState').style.display   = name === 'empty'   ? 'flex' : 'none';
-  document.getElementById('errorState').style.display   = name === 'error'   ? 'flex' : 'none';
-  document.getElementById('graphArea').style.display    = name === 'graph'   ? 'block': 'none';
-  document.getElementById('summaryBar').style.display   = name === 'graph'   ? 'flex' : 'none';
-}
-
-// ── Load commits ──────────────────────────────────────────────
-async function loadCommits(source, value) {
-  const src = source || 'local';
-  const val = value || workspacePath;
-  if (!val) { showState('empty'); return; }
-  showState('loading');
-  setStatus('loading', 'Fetching commits…');
-
-  try {
-    const res = await fetch(`${API}/api/analyze`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ source: src, value: val, plan: null })
-    });
-    const data = await res.json();
-    if (!res.ok || !data.commits) throw new Error(data.error || 'No commits returned');
-
-    commits = data.commits;
-    renderGraph();
-    setStatus('ok', `${commits.length} commits loaded`);
-    showState('graph');
-  } catch (err) {
-    const msg = err.message || '';
-    if (msg.includes('fetch') || msg.includes('NetworkError') || msg.includes('Failed to fetch')) {
-      showError('Backend unavailable', 'Make sure the BuildLens server is running on port 5000.\nRun: npm run dev from the project root.');
-      setStatus('error', 'Backend not reachable');
-    } else if (msg.includes('no commits') || msg.includes('does not have any commits')) {
-      showError('No commits found', `The folder "${workspacePath}" has no git commits yet.\nEnter a different repo path below.`);
-      setStatus('error', 'No commits in this repo');
-    } else {
-      showError('Error', msg);
-      setStatus('error', msg.slice(0, 60));
-    }
-  }
-}
-
-function loadFromCustomPath() {
-  const input = document.getElementById('customPath');
-  const p = input.value.trim();
-  if (!p) return;
-  workspacePath = p;
-  loadCommits();
-}
-
-function showError(title, sub) {
-  document.getElementById('errorTitle').textContent = title;
-  document.getElementById('errorSub').textContent = sub;
-  showState('error');
-}
-
-// ── Render commit graph ───────────────────────────────────────
-function renderGraph() {
-  const wrap = document.getElementById('commitGraph');
-  wrap.innerHTML = '';
-
-  // Summary
-  const small  = commits.filter(c => c.insertions + c.deletions < 50).length;
-  const medium = commits.filter(c => { const t = c.insertions+c.deletions; return t>=50&&t<200; }).length;
-  const large  = commits.filter(c => c.insertions + c.deletions >= 200).length;
-  document.getElementById('sumSmall').textContent  = small  + ' small';
-  document.getElementById('sumMed').textContent    = medium + ' medium';
-  document.getElementById('sumLarge').textContent  = large  + ' large';
-  document.getElementById('sumTotal').textContent  = commits.length + ' commits';
-
-  commits.forEach((commit, idx) => {
-    const node = document.createElement('div');
-    node.className = 'commit-node';
-    node.innerHTML = buildCardHtml(commit, idx);
-    wrap.appendChild(node);
-
-    if (idx < commits.length - 1) {
-      const conn = document.createElement('div');
-      conn.className = 'connector';
-      conn.innerHTML = '<div class="conn-line"></div><div class="conn-arrow"></div>';
-      wrap.appendChild(conn);
-    }
-
-    // Restore saved note
-    const noteEl = node.querySelector('.note-textarea');
-    if (notes[commit.hash]) noteEl.value = notes[commit.hash];
-
-    // Bind events
-    node.querySelector('.card-top').addEventListener('click', () => toggleCard(commit.hash));
-    node.querySelector('.btn-explain').addEventListener('click', (e) => { e.stopPropagation(); explainCommit(commit); });
-    node.querySelector('.btn-note-tog').addEventListener('click', (e) => { e.stopPropagation(); toggleNote(commit.hash); });
-    node.querySelector('.btn-save-note').addEventListener('click', () => saveNote(commit.hash, noteEl.value));
-    node.querySelector('.btn-validate').addEventListener('click', () => validateNote(commit));
-    noteEl.addEventListener('input', () => autoSave(commit.hash, noteEl.value));
-  });
-}
-
-function buildCardHtml(commit, idx) {
-  const total = commit.insertions + commit.deletions;
-  const sizeClass = total < 50 ? 'size-sm' : total < 200 ? 'size-md' : 'size-lg';
-  const dateStr = new Date(commit.date).toLocaleDateString('en-US', { month:'short', day:'numeric' });
-
-  return `
-    <div class="commit-card ${sizeClass}" id="card-${commit.hash}">
-      <div class="card-top">
-        <div class="card-row1">
-          <span class="commit-hash">${commit.shortHash}</span>
-          <span class="commit-date">${dateStr}</span>
-        </div>
-        <div class="commit-msg">${escHtml(commit.message)}</div>
-        <div class="card-meta">
-          <span class="commit-author">${escHtml(commit.author)}</span>
-          ${commit.insertions ? `<span class="stat-badge stat-add">+${commit.insertions}</span>` : ''}
-          ${commit.deletions  ? `<span class="stat-badge stat-del">-${commit.deletions}</span>`  : ''}
-          ${commit.filesChanged ? `<span class="stat-badge stat-files">${commit.filesChanged}f</span>` : ''}
-        </div>
+  <div class="header">
+    <div class="header-left">
+      <div class="header-logo">
+        <div class="logo-dot"></div>
+        <div class="logo-dot"></div>
+        <div class="logo-dot"></div>
       </div>
-      <div class="card-actions">
-        <button class="btn-action btn-explain">✦ Explain</button>
-        <button class="btn-action btn-note-tog" id="notebtn-${commit.hash}">📝 Note</button>
+      <span class="header-title">BuildLens AI</span>
+    </div>
+    <button class="btn-browser" onclick="openBrowser()">⬡ Dashboard</button>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Connecting…</span>
+  </div>
+
+  <div class="repo-picker" id="repoPicker">
+    <input id="repoPickerInput" type="text" placeholder="GitHub URL or local path…" />
+    <button onclick="loadFromPicker()">→</button>
+  </div>
+
+  <nav class="nav">
+    <button class="nav-btn active" onclick="switchSection('commit')">Commits</button>
+    <button class="nav-btn" onclick="switchSection('session')">Verify</button>
+    <button class="nav-btn" onclick="switchSection('intent')">Intent</button>
+  </nav>
+
+  <div class="summary-bar" id="summaryBar" style="display:none">
+    <div class="summary-chip">
+      <div class="chip-dot" style="background:var(--success)"></div><span id="sumSmall">0 small</span>
+    </div>
+    <div class="summary-chip">
+      <div class="chip-dot" style="background:var(--warning)"></div><span id="sumMed">0 medium</span>
+    </div>
+    <div class="summary-chip">
+      <div class="chip-dot" style="background:var(--danger)"></div><span id="sumLarge">0 large</span>
+    </div>
+    <div class="summary-chip" style="margin-left:auto"><span id="sumTotal"
+        style="color:var(--text);font-weight:700"></span></div>
+  </div>
+
+  <div id="main">
+    <!-- Section: Commit Explanation -->
+    <div id="commitArea" class="section active">
+      <div class="center-state" id="loadingState" style="display:none">
+        <div class="spinner"></div>
+        <div class="empty-title">Loading commits…</div>
       </div>
-      <div class="card-expand" id="expand-${commit.hash}">
-        <div id="exp-content-${commit.hash}"></div>
-        <div class="note-area" id="note-area-${commit.hash}" style="display:none; border-top:1px solid var(--border)">
-          <div class="note-label">Developer note</div>
-          <textarea class="note-textarea" placeholder="What did you build in this commit? Be specific — AI will validate it against the actual diff."></textarea>
-          <div class="note-actions">
-            <button class="btn-save-note">Save</button>
-            <button class="btn-validate">🤖 AI Validate</button>
-            <span class="note-saved" id="saved-${commit.hash}">✓ saved</span>
+      <div class="center-state" id="emptyState">
+        <div class="empty-icon">⬡</div>
+        <div class="empty-title">No workspace</div>
+        <button class="btn-primary" onclick="loadCommits()">Load Commits</button>
+      </div>
+      <div class="center-state" id="errorState" style="display:none">
+        <div class="empty-icon">⚠</div>
+        <div class="empty-title" id="errorTitle">Error</div>
+        <div class="empty-sub" id="errorSub"></div>
+      </div>
+      <div id="graphArea" style="display:none">
+        <div class="graph-wrap" id="commitGraph"></div>
+      </div>
+    </div>
+
+    <!-- Section: Work Session -->
+    <div id="sessionArea" class="section">
+      <div class="work-session-wrap">
+        <div class="session-card" id="sessionStartCard">
+          <div class="session-title">Daily Verification</div>
+          <p style="font-size: 10px; color: var(--muted); margin-bottom: 12px; line-height: 1.5;">Verify your work
+            matches your plans</p>
+          <button class="btn-primary" style="width:100%" onclick="startSession()">▶ Start Verification</button>
+        </div>
+        <div class="session-card" id="sessionActiveCard" style="display:none">
+          <div class="session-title">Active Verification</div>
+          <textarea id="sessionDescription" class="session-textarea"
+            placeholder="Describe what you built today…"></textarea>
+          <div class="session-btn-row">
+            <button class="btn-primary" style="flex:2" onclick="verifySession()">Verify Work</button>
+            <button class="btn-browser" style="flex:1; padding: 7px 12px;" onclick="endSession()">Cancel</button>
           </div>
-          <div id="validation-${commit.hash}"></div>
+          <div id="sessionResult" style="margin-top:16px"></div>
         </div>
       </div>
-    </div>`;
-}
+    </div>
 
-// ── Card toggling ─────────────────────────────────────────────
-function toggleCard(hash) {
-  const exp = document.getElementById(`expand-${hash}`);
-  const isOpen = exp.classList.contains('open');
-  exp.classList.toggle('open', !isOpen);
-}
+    <!-- Section: Intent Graph -->
+    <div id="intentArea" class="section">
+      <div class="intent-wrap">
+        <div class="intent-input-card">
+          <div class="session-title">Intent Alignment</div>
+          <p style="font-size: 10px; color: var(--muted); margin-bottom: 12px;">Check commits against your plan</p>
+          <textarea id="intentPlan" class="session-textarea" placeholder="Paste your project plan…"></textarea>
+          <button class="intent-btn" onclick="runIntent()">✦ Run Alignment</button>
+        </div>
+        <div id="intentResults"></div>
+      </div>
+    </div>
+  </div>
 
-function toggleNote(hash) {
-  const noteArea = document.getElementById(`note-area-${hash}`);
-  const btn = document.getElementById(`notebtn-${hash}`);
-  const exp = document.getElementById(`expand-${hash}`);
-  const isVisible = noteArea.style.display !== 'none';
-  noteArea.style.display = isVisible ? 'none' : 'block';
-  btn.classList.toggle('active', !isVisible);
-  exp.classList.add('open');
-}
+  <script>
+    const vscode = acquireVsCodeApi();
+    const API = 'http://localhost:5000';
+    let workspacePath = '', commits = [], notes = {};
 
-// ── Explain commit ────────────────────────────────────────────
-async function explainCommit(commit) {
-  const contentEl = document.getElementById(`exp-content-${commit.hash}`);
-  const exp = document.getElementById(`expand-${commit.hash}`);
-  exp.classList.add('open');
-
-  contentEl.innerHTML = `<div class="explanation-loading"><div class="spinner" style="width:14px;height:14px;border-width:2px"></div><span>Asking Groq…</span></div>`;
-
-  try {
-    const res = await fetch(`${API}/api/commit/explain`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ repoPath: workspacePath, commitHash: commit.hash })
+    // ── VS CODE MESSAGES ──
+    window.addEventListener('message', e => {
+      const msg = e.data;
+      if (msg.type === 'init') {
+        workspacePath = msg.workspacePath || '';
+        notes = msg.notes || {};
+        if (workspacePath) loadCommits(); else { showState('empty'); setStatus('idle', 'No workspace'); }
+      }
     });
-    const data = await res.json();
-    contentEl.innerHTML = `<div class="explanation-box">${escHtml(data.explanation)}</div>`;
-  } catch {
-    contentEl.innerHTML = `<div class="explanation-box" style="color:var(--danger)">Backend unavailable.</div>`;
-  }
-}
+    vscode.postMessage({ type: 'ready' });
 
-// ── Notes ─────────────────────────────────────────────────────
-let saveTimers = {};
-function autoSave(hash, text) {
-  clearTimeout(saveTimers[hash]);
-  saveTimers[hash] = setTimeout(() => saveNote(hash, text), 800);
-}
-
-function saveNote(hash, text) {
-  notes[hash] = text;
-  vscode.postMessage({ type: 'saveNote', commitHash: hash, note: text });
-  const indicator = document.getElementById(`saved-${hash}`);
-  indicator.classList.add('show');
-  setTimeout(() => indicator.classList.remove('show'), 1500);
-}
-
-// ── AI Validate ───────────────────────────────────────────────
-async function validateNote(commit) {
-  const hash = commit.hash;
-  const noteEl = document.querySelector(`#note-area-${hash} .note-textarea`);
-  const note = noteEl?.value?.trim();
-  const valEl = document.getElementById(`validation-${hash}`);
-  const btn = document.querySelector(`#note-area-${hash} .btn-validate`);
-
-  if (!note) {
-    valEl.innerHTML = `<div class="validation-box warn">Write a note first — describe what you built in this commit.</div>`;
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = '⏳ Validating…';
-  valEl.innerHTML = `<div class="explanation-loading"><div class="spinner" style="width:14px;height:14px;border-width:2px"></div><span>AI is checking your code…</span></div>`;
-
-  try {
-    // First get the diff
-    const diffRes = await fetch(`${API}/api/commit/diff`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ repoPath: workspacePath, commitHash: hash })
-    });
-    const diffData = await diffRes.json();
-
-    // Then ask Groq to validate
-    const validateRes = await fetch(`${API}/api/commit/validate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ note, diff: diffData.diff, commitMessage: commit.message })
-    });
-
-    let result, boxClass = 'ok';
-    if (validateRes.ok) {
-      const vd = await validateRes.json();
-      result = vd.result;
-      boxClass = vd.status === 'mismatch' ? 'warn' : vd.status === 'error' ? 'error' : 'ok';
-    } else {
-      result = 'Validation endpoint unavailable. Add POST /api/commit/validate to the backend.';
-      boxClass = 'warn';
+    // ── NAVIGATION ──
+    function switchSection(name) {
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.innerText.toLowerCase().includes(name)));
+      document.querySelectorAll('.section').forEach(sec => sec.classList.toggle('active', sec.id.startsWith(name)));
+      if (name !== 'commit') document.getElementById('summaryBar').style.display = 'none';
+      else if (commits.length > 0) document.getElementById('summaryBar').style.display = 'flex';
     }
 
-    valEl.innerHTML = `<div class="validation-box ${boxClass}">${escHtml(result)}</div>`;
-  } catch (err) {
-    valEl.innerHTML = `<div class="validation-box error">Validation failed: ${escHtml(err.message)}</div>`;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '🤖 AI Validate';
-  }
-}
+    // ── COMMITS ──
+    function setStatus(state, text) {
+      const dot = document.getElementById('statusDot');
+      dot.className = 'status-dot ' + (state === 'ok' ? 'connected' : state === 'error' ? 'error' : state === 'loading' ? 'loading' : '');
+      document.getElementById('statusText').textContent = text;
+    }
+    function showState(name) {
+      document.getElementById('loadingState').style.display = name === 'loading' ? 'flex' : 'none';
+      document.getElementById('emptyState').style.display = name === 'empty' ? 'flex' : 'none';
+      document.getElementById('errorState').style.display = name === 'error' ? 'flex' : 'none';
+      document.getElementById('graphArea').style.display = name === 'graph' ? 'block' : 'none';
+      document.getElementById('summaryBar').style.display = (name === 'graph' && document.querySelector('.nav-btn.active').innerText.includes('Commit')) ? 'flex' : 'none';
+    }
+    async function loadCommits(source, value) {
+      const src = source || 'local', val = value || workspacePath;
+      if (!val) { showState('empty'); return; }
+      showState('loading'); setStatus('loading', 'Loading…');
+      try {
+        const res = await fetch(`${API}/api/analyze`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ source: src, value: val, plan: null })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.commits) throw new Error(data.error || 'Failed');
+        commits = data.commits; renderGraph(); setStatus('ok', `${commits.length} commits loaded`); showState('graph');
+      } catch (err) { showError('Error', err.message); setStatus('error', 'Failed'); }
+    }
+    function renderGraph() {
+      const wrap = document.getElementById('commitGraph'); wrap.innerHTML = '';
+      const small = commits.filter(c => c.insertions + c.deletions < 50).length;
+      const med = commits.filter(c => { const t = c.insertions + c.deletions; return t >= 50 && t < 200; }).length;
+      const large = commits.filter(c => c.insertions + c.deletions >= 200).length;
+      document.getElementById('sumSmall').textContent = small + ' s';
+      document.getElementById('sumMed').textContent = med + ' m';
+      document.getElementById('sumLarge').textContent = large + ' l';
+      document.getElementById('sumTotal').textContent = commits.length + ' commits';
+      commits.forEach((c, idx) => {
+        const node = document.createElement('div'); node.className = 'commit-node'; node.innerHTML = buildCardHtml(c, idx); wrap.appendChild(node);
+        if (idx < commits.length - 1) { const conn = document.createElement('div'); conn.className = 'connector'; conn.innerHTML = '<div class="conn-line"></div><div class="conn-arrow"></div>'; wrap.appendChild(conn); }
+        const nEl = node.querySelector('.note-textarea'); if (notes[c.hash]) nEl.value = notes[c.hash];
+        node.querySelector('.card-top').addEventListener('click', () => toggleCard(c.hash));
+        node.querySelector('.btn-explain').addEventListener('click', e => { e.stopPropagation(); explainCommit(c); });
+        node.querySelector('.btn-note-tog').addEventListener('click', e => { e.stopPropagation(); toggleNote(c.hash); });
+        node.querySelector('.btn-save-note').addEventListener('click', () => saveNote(c.hash, nEl.value));
+        node.querySelector('.btn-validate').addEventListener('click', () => validateNote(c));
+      });
+    }
+    function buildCardHtml(c, idx) {
+      const t = c.insertions + c.deletions, s = t < 50 ? 'size-sm' : t < 200 ? 'size-md' : 'size-lg';
+      return `<div class="commit-card ${s}" id="card-${c.hash}"><div class="card-top"><div class="card-row1"><span class="commit-hash">${c.shortHash}</span><span class="commit-date">${new Date(c.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span></div><div class="commit-msg">${escHtml(c.message)}</div></div><div class="card-actions"><button class="btn-action btn-explain">✦ Explain</button><button class="btn-action btn-note-tog" id="notebtn-${c.hash}">📝 Note</button></div><div class="card-expand" id="expand-${c.hash}"><div id="exp-content-${c.hash}"></div><div class="note-area" id="note-area-${c.hash}" style="display:none;border-top:1px solid rgba(48,54,61,.3)"><textarea class="note-textarea"></textarea><div class="note-actions"><button class="btn-save-note">Save</button><button class="btn-validate">Validate</button></div><div id="validation-${c.hash}"></div></div></div></div>`;
+    }
+    function toggleCard(h) { document.getElementById(`expand-${h}`).classList.toggle('open'); }
+    function toggleNote(h) { const n = document.getElementById(`note-area-${h}`), e = document.getElementById(`expand-${h}`); n.style.display = n.style.display === 'none' ? 'block' : 'none'; e.classList.add('open'); }
+    async function explainCommit(c) {
+      const el = document.getElementById(`exp-content-${c.hash}`); document.getElementById(`expand-${c.hash}`).classList.add('open'); el.innerHTML = '<div class="explanation-loading"><div class="spinner"></div>Loading…</div>';
+      const res = await fetch(`${API}/api/commit/explain`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ repoPath: workspacePath, commitHash: c.hash }) });
+      const d = await res.json(); el.innerHTML = `<div class="explanation-box">${escHtml(d.explanation)}</div>`;
+    }
+    function saveNote(h, t) { notes[h] = t; vscode.postMessage({ type: 'saveNote', commitHash: h, note: t }); }
+    async function validateNote(c) {
+      const h = c.hash, n = document.querySelector(`#note-area-${h} .note-textarea`).value, v = document.getElementById(`validation-${h}`); v.innerHTML = '<div class="explanation-loading"><div class="spinner"></div>Validating…</div>';
+      const dR = await fetch(`${API}/api/work-session/diff`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ repoPath: workspacePath }) });
+      const dD = await dR.json();
+      const vR = await fetch(`${API}/api/commit/validate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: n, diff: dD.diff, commitMessage: c.message }) });
+      const vD = await vR.json(); v.innerHTML = `<div class="validation-box ok">${escHtml(vD.result)}</div>`;
+    }
+    function showError(t, s) { document.getElementById('errorTitle').textContent = t; document.getElementById('errorSub').textContent = s; showState('error'); }
 
-// ── Helpers ───────────────────────────────────────────────────
-function openBrowser() { vscode.postMessage({ type: 'openBrowser' }); }
+    // ── WORK SESSION ──
+    let sessionStartTime = null;
+    function startSession() { sessionStartTime = new Date(); document.getElementById('sessionStartCard').style.display = 'none'; document.getElementById('sessionActiveCard').style.display = 'block'; }
+    function endSession() { sessionStartTime = null; document.getElementById('sessionStartCard').style.display = 'block'; document.getElementById('sessionActiveCard').style.display = 'none'; }
+    async function verifySession() {
+      const desc = document.getElementById('sessionDescription').value, res = document.getElementById('sessionResult'); res.innerHTML = '<div class="explanation-loading"><div class="spinner"></div>Verifying…</div>';
+      const dR = await fetch(`${API}/api/work-session/diff`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ repoPath: workspacePath }) });
+      const dD = await dR.json();
+      const vR = await fetch(`${API}/api/work-session/verify`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ repoPath: workspacePath, description: desc, diff: dD.diff, sessionStart: sessionStartTime }) });
+      const d = await vR.json();
+      res.innerHTML = `<div class="score-circle">${d.score}</div><div class="validation-box ok">${escHtml(d.summary)}</div>`;
+    }
 
-function loadFromPicker() {
-  const val = document.getElementById('repoPickerInput').value.trim();
-  if (!val) return;
-  const source = val.startsWith('http') ? 'github' : 'local';
-  workspacePath = val;
-  loadCommits(source, val);
-}
+    // ── INTENT ──
+    async function runIntent() {
+      const p = document.getElementById('intentPlan').value, res = document.getElementById('intentResults'); res.innerHTML = '<div class="explanation-loading"><div class="spinner"></div>Aligning…</div>';
+      const r = await fetch(`${API}/api/intent-graph/align`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ planText: p }) });
+      const d = await r.json();
+      res.innerHTML = d.results.map(i => `<div class="result-card ${i.action}"><div class="result-req">${escHtml(i.requirement)}</div><div class="result-file">${escHtml(i.matchedFile)}</div><div class="result-exp">${escHtml(i.explanation)}</div></div>`).join('');
+    }
 
-// Override loadCommits to accept source/value
-const _origLoadCommits = loadCommits;
-
-
-function escHtml(str) {
-  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-</script>
+    function openBrowser() { vscode.postMessage({ type: 'openBrowser' }); }
+    function loadFromPicker() { workspacePath = document.getElementById('repoPickerInput').value; loadCommits(); }
+    function escHtml(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  </script>
 </body>
+
 </html>
