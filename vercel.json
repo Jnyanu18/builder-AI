@@ -1,0 +1,10 @@
+{
+  "name": "buildlens-ai",
+  "version": 2,
+  "public": true,
+  "buildCommand": "echo 'Static site'",
+  "outputDirectory": "public",
+  "github": {
+    "enabled": false
+  }
+}

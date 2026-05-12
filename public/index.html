@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BuildLens AI - Stop Shipping Incomplete Code</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .navbar {
+            background: white;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: #0066cc;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #666;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #0066cc;
+        }
+
+        .cta-button {
+            background: #0066cc;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .cta-button:hover {
+            background: #0052a3;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            padding: 6rem 2rem;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            opacity: 0.95;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary,
+        .btn-secondary {
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #0066cc;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .section {
+            padding: 4rem 0;
+        }
+
+        .section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .problems {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .problem-card {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 8px;
+            border-left: 4px solid #0066cc;
+        }
+
+        .problem-card h3 {
+            color: #0066cc;
+            margin-bottom: 0.5rem;
+        }
+
+        .problem-card p {
+            color: #666;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature {
+            text-align: center;
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .feature p {
+            color: #666;
+        }
+
+        .demo-section {
+            background: #f8f9fa;
+            padding: 4rem 0;
+        }
+
+        .demo-box {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 2rem 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        .demo-box pre {
+            margin: 0;
+        }
+
+        .demo-label {
+            color: #0066cc;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .pricing {
+            text-align: center;
+            padding: 3rem;
+            background: #e8f1ff;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+
+        .pricing h3 {
+            font-size: 2rem;
+            color: #0066cc;
+            margin-bottom: 1rem;
+        }
+
+        .pricing p {
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        .install-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .step {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .step-number {
+            font-size: 2.5rem;
+            color: #0066cc;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .step h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer {
+            background: #1a1a1a;
+            color: #ccc;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .section h2 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">🔍 BuildLens AI</div>
+        <ul class="nav-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+        </ul>
+        <a href="https://github.com/Jnyanu18/buildlens-ai/tree/master/buildlens-action" class="cta-button">GitHub</a>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <h1>Stop Shipping Incomplete Code</h1>
+        <p>AI-powered PR verification that blocks incomplete work before code review</p>
+        <div class="hero-buttons">
+            <a href="https://github.com/Jnyanu18/buildlens-ai/tree/master/buildlens-action" class="btn-primary">Install
+                Now (Free)</a>
+            <a href="#demo" class="btn-secondary">See Demo</a>
+        </div>
+    </section>
+
+    <!-- Problems Section -->
+    <section class="section">
+        <div class="container">
+            <h2>The Problem Every Developer Faces</h2>
+            <div class="problems">
+                <div class="problem-card">
+                    <h3>❌ Incomplete PRs</h3>
+                    <p>You think it's done. Reviewer finds 10 things missing. You waste 2 hours fixing.</p>
+                </div>
+                <div class="problem-card">
+                    <h3>⏱️ Review Friction</h3>
+                    <p>Reviewers ask the same questions repeatedly. No consistency in what "done" means.</p>
+                </div>
+                <div class="problem-card">
+                    <h3>📦 Production Bugs</h3>
+                    <p>Incomplete error handling, missing edge cases, untested code ships and breaks prod.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section" id="features">
+        <div class="container">
+            <h2>How BuildLens Solves It</h2>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">🔍</div>
+                    <h3>AI Analysis</h3>
+                    <p>Scans code changes against requirements. Understands what "complete" means.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📊</div>
+                    <h3>Completion Score</h3>
+                    <p>Generates 0-100% score. Shows exactly what's missing: tests, docs, error handling.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🚫</div>
+                    <h3>Auto-Block</h3>
+                    <p>Blocks merge if score <80%. No incomplete code ships. Period.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Zero Setup</h3>
+                    <p>GitHub Action. One file. Works immediately. No servers to manage.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">💰</div>
+                    <h3>Free Forever</h3>
+                    <p>Uses free Groq API. No credit card. No hidden costs.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🤖</div>
+                    <h3>Learns Your Patterns</h3>
+                    <p>Over time: sees what matters for your team. Customizes feedback.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section class="demo-section" id="demo">
+        <div class="container">
+            <h2>See It In Action</h2>
+
+            <div class="demo-box">
+                <div class="demo-label">PR Opened: "Add User Authentication"</div>
+                <pre>┌─ BuildLens PR Verification
+├─ Status: RUNNING
+└─ Analyzing code changes...</pre>
+            </div>
+
+            <div class="demo-box">
+                <div class="demo-label">BuildLens Analysis (60 seconds later)</div>
+                <pre>🔍 BuildLens Analysis
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Overall: PARTIAL IMPLEMENTATION (72%)
+
+✓ JWT Implementation
+  - Token generation logic implemented
+  - Middleware properly configured
+
+✓ User Model Updates
+  - Password hashing added
+  - User fields extended
+
+⚠ Error Handling
+  - Missing invalid token response
+  - No rate limiting on auth endpoint
+
+✗ Tests
+  - No unit tests for JWT validation
+  - No integration tests for login flow
+
+✗ Documentation
+  - README auth section missing
+  - No API docs for new endpoints
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Score: 72/100 | Status: BLOCKED
+Merge blocked. Fix items above to reach 80%.</pre>
+            </div>
+
+            <div style="text-align: center; margin: 2rem 0;">
+                <p style="font-size: 1.1rem; color: #666;">
+                    Developer adds tests + error handling → Score: 88% ✅ → PR can merge
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation Section -->
+    <section class="section">
+        <div class="container">
+            <h2>Get Started in 2 Minutes</h2>
+
+            <div class="install-steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Get API Key</h3>
+                    <p>Visit <a href="https://groq.com/pricing" target="_blank" style="color: #0066cc;">groq.com</a> for
+                        free key</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Add Workflow</h3>
+                    <p>Create <code>.github/workflows/buildlens.yml</code></p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Add Secret</h3>
+                    <p>Add GROQ_API_KEY to GitHub secrets</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Done!</h3>
+                    <p>Open a PR, BuildLens verifies automatically</p>
+                </div>
+            </div>
+
+            <div class="demo-box" style="margin-top: 2rem;">
+                <div class="demo-label">Workflow File (.github/workflows/buildlens.yml)</div>
+                <pre>name: BuildLens PR Verification
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  buildlens:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: Jnyanu18/buildlens-ai@v1
+        with:
+          groq-api-key: ${{ secrets.GROQ_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}</pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="section" id="pricing">
+        <div class="container">
+            <h2>Pricing</h2>
+            <div class="pricing">
+                <h3>✅ Free Forever</h3>
+                <p>No credit card required. Uses free Groq API.</p>
+                <p style="margin-top: 1rem; color: #0066cc; font-weight: bold;">Perfect for solo developers and teams.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="section" style="background: #f8f9fa;">
+        <div class="container" style="text-align: center;">
+            <h2>Ready to Stop Shipping Incomplete Code?</h2>
+            <p style="font-size: 1.2rem; color: #666; margin-bottom: 2rem;">Install BuildLens now. It takes 2 minutes.
+            </p>
+            <a href="https://github.com/Jnyanu18/buildlens-ai/tree/master/buildlens-action" class="cta-button"
+                style="padding: 1rem 3rem; font-size: 1.1rem; display: inline-block;">Install on GitHub</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="https://github.com/Jnyanu18/buildlens-ai">GitHub</a>
+            <a href="https://discord.gg/buildlens">Discord</a>
+            <a href="https://twitter.com/buildlensai">Twitter</a>
+            <a href="mailto:support@buildlens.ai">Email</a>
+        </div>
+        <p>Built by developers, for developers. Made with ❤️ to stop shipping broken code.</p>
+        <p style="margin-top: 1rem; opacity: 0.7;">© 2025 BuildLens AI. All rights reserved.</p>
+    </footer>
+</body>
+
+</html>
