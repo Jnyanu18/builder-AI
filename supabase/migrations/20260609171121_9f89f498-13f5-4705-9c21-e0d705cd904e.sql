@@ -1,0 +1,1 @@
+UPDATE public.projects SET owner_id='d7cf5392-9530-4d23-a9e2-e365b21a1bc6' WHERE id='7a3224d9-d5f3-4c11-8dbb-323c4ee7aa04';

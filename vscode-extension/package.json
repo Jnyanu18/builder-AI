@@ -1,0 +1,67 @@
+{
+  "name": "intentos",
+  "displayName": "IntentOS — Plan vs Implementation",
+  "description": "Verify your code matches the approved blueprint. Runs drift analysis on demand from inside VS Code.",
+  "version": "0.1.0",
+  "publisher": "intentos",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "intentos.runDrift",
+        "title": "IntentOS: Run drift analysis"
+      },
+      {
+        "command": "intentos.showLatest",
+        "title": "IntentOS: Show latest drift report"
+      },
+      {
+        "command": "intentos.configure",
+        "title": "IntentOS: Configure project"
+      }
+    ],
+    "configuration": {
+      "title": "IntentOS",
+      "properties": {
+        "intentos.apiBaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Base URL of your IntentOS deployment (e.g. https://your-app.lovable.app)."
+        },
+        "intentos.projectId": {
+          "type": "string",
+          "default": "",
+          "description": "The IntentOS project UUID."
+        },
+        "intentos.apiToken": {
+          "type": "string",
+          "default": "",
+          "description": "Project API token from the Repository tab."
+        },
+        "intentos.runOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically re-run drift analysis when a file is saved."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.4.0"
+  }
+}
