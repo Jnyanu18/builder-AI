@@ -9,36 +9,36 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
 import { Route as ApiPublicDemoLoginRouteImport } from './routes/api/public/demo-login'
 import { Route as AuthenticatedProjectsIdIndexRouteImport } from './routes/_authenticated/projects.$id.index'
-import { Route as AuthenticatedProjectsIdRepositoryRouteImport } from './routes/_authenticated/projects.$id.repository'
-import { Route as AuthenticatedProjectsIdMembersRouteImport } from './routes/_authenticated/projects.$id.members'
-import { Route as AuthenticatedProjectsIdHistoryRouteImport } from './routes/_authenticated/projects.$id.history'
-import { Route as AuthenticatedProjectsIdDocsRouteImport } from './routes/_authenticated/projects.$id.docs'
-import { Route as AuthenticatedProjectsIdChatRouteImport } from './routes/_authenticated/projects.$id.chat'
-import { Route as AuthenticatedProjectsIdBlueprintRouteImport } from './routes/_authenticated/projects.$id.blueprint'
-import { Route as AuthenticatedProjectsIdApprovalsRouteImport } from './routes/_authenticated/projects.$id.approvals'
 import { Route as AuthenticatedProjectsIdAlignmentRouteImport } from './routes/_authenticated/projects.$id.alignment'
-import { Route as ApiPublicProjectsIdGithubWebhookRouteImport } from './routes/api/public/projects.$id.github-webhook'
+import { Route as AuthenticatedProjectsIdApprovalsRouteImport } from './routes/_authenticated/projects.$id.approvals'
+import { Route as AuthenticatedProjectsIdBlueprintRouteImport } from './routes/_authenticated/projects.$id.blueprint'
+import { Route as AuthenticatedProjectsIdChatRouteImport } from './routes/_authenticated/projects.$id.chat'
+import { Route as AuthenticatedProjectsIdDocsRouteImport } from './routes/_authenticated/projects.$id.docs'
+import { Route as AuthenticatedProjectsIdHistoryRouteImport } from './routes/_authenticated/projects.$id.history'
+import { Route as AuthenticatedProjectsIdMembersRouteImport } from './routes/_authenticated/projects.$id.members'
+import { Route as AuthenticatedProjectsIdRepositoryRouteImport } from './routes/_authenticated/projects.$id.repository'
 import { Route as ApiPublicProjectsIdDriftRouteImport } from './routes/api/public/projects.$id.drift'
+import { Route as ApiPublicProjectsIdGithubWebhookRouteImport } from './routes/api/public/projects.$id.github-webhook'
 
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -63,40 +63,10 @@ const AuthenticatedProjectsIdIndexRoute =
     path: '/projects/$id/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedProjectsIdRepositoryRoute =
-  AuthenticatedProjectsIdRepositoryRouteImport.update({
-    id: '/projects/$id/repository',
-    path: '/projects/$id/repository',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedProjectsIdMembersRoute =
-  AuthenticatedProjectsIdMembersRouteImport.update({
-    id: '/projects/$id/members',
-    path: '/projects/$id/members',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedProjectsIdHistoryRoute =
-  AuthenticatedProjectsIdHistoryRouteImport.update({
-    id: '/projects/$id/history',
-    path: '/projects/$id/history',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedProjectsIdDocsRoute =
-  AuthenticatedProjectsIdDocsRouteImport.update({
-    id: '/projects/$id/docs',
-    path: '/projects/$id/docs',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedProjectsIdChatRoute =
-  AuthenticatedProjectsIdChatRouteImport.update({
-    id: '/projects/$id/chat',
-    path: '/projects/$id/chat',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedProjectsIdBlueprintRoute =
-  AuthenticatedProjectsIdBlueprintRouteImport.update({
-    id: '/projects/$id/blueprint',
-    path: '/projects/$id/blueprint',
+const AuthenticatedProjectsIdAlignmentRoute =
+  AuthenticatedProjectsIdAlignmentRouteImport.update({
+    id: '/projects/$id/alignment',
+    path: '/projects/$id/alignment',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedProjectsIdApprovalsRoute =
@@ -105,22 +75,52 @@ const AuthenticatedProjectsIdApprovalsRoute =
     path: '/projects/$id/approvals',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedProjectsIdAlignmentRoute =
-  AuthenticatedProjectsIdAlignmentRouteImport.update({
-    id: '/projects/$id/alignment',
-    path: '/projects/$id/alignment',
+const AuthenticatedProjectsIdBlueprintRoute =
+  AuthenticatedProjectsIdBlueprintRouteImport.update({
+    id: '/projects/$id/blueprint',
+    path: '/projects/$id/blueprint',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const ApiPublicProjectsIdGithubWebhookRoute =
-  ApiPublicProjectsIdGithubWebhookRouteImport.update({
-    id: '/api/public/projects/$id/github-webhook',
-    path: '/api/public/projects/$id/github-webhook',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedProjectsIdChatRoute =
+  AuthenticatedProjectsIdChatRouteImport.update({
+    id: '/projects/$id/chat',
+    path: '/projects/$id/chat',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProjectsIdDocsRoute =
+  AuthenticatedProjectsIdDocsRouteImport.update({
+    id: '/projects/$id/docs',
+    path: '/projects/$id/docs',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProjectsIdHistoryRoute =
+  AuthenticatedProjectsIdHistoryRouteImport.update({
+    id: '/projects/$id/history',
+    path: '/projects/$id/history',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProjectsIdMembersRoute =
+  AuthenticatedProjectsIdMembersRouteImport.update({
+    id: '/projects/$id/members',
+    path: '/projects/$id/members',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProjectsIdRepositoryRoute =
+  AuthenticatedProjectsIdRepositoryRouteImport.update({
+    id: '/projects/$id/repository',
+    path: '/projects/$id/repository',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const ApiPublicProjectsIdDriftRoute =
   ApiPublicProjectsIdDriftRouteImport.update({
     id: '/api/public/projects/$id/drift',
     path: '/api/public/projects/$id/drift',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicProjectsIdGithubWebhookRoute =
+  ApiPublicProjectsIdGithubWebhookRouteImport.update({
+    id: '/api/public/projects/$id/github-webhook',
+    path: '/api/public/projects/$id/github-webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -249,11 +249,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -263,11 +263,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/dashboard': {
@@ -298,46 +298,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsIdIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/projects/$id/repository': {
-      id: '/_authenticated/projects/$id/repository'
-      path: '/projects/$id/repository'
-      fullPath: '/projects/$id/repository'
-      preLoaderRoute: typeof AuthenticatedProjectsIdRepositoryRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/projects/$id/members': {
-      id: '/_authenticated/projects/$id/members'
-      path: '/projects/$id/members'
-      fullPath: '/projects/$id/members'
-      preLoaderRoute: typeof AuthenticatedProjectsIdMembersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/projects/$id/history': {
-      id: '/_authenticated/projects/$id/history'
-      path: '/projects/$id/history'
-      fullPath: '/projects/$id/history'
-      preLoaderRoute: typeof AuthenticatedProjectsIdHistoryRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/projects/$id/docs': {
-      id: '/_authenticated/projects/$id/docs'
-      path: '/projects/$id/docs'
-      fullPath: '/projects/$id/docs'
-      preLoaderRoute: typeof AuthenticatedProjectsIdDocsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/projects/$id/chat': {
-      id: '/_authenticated/projects/$id/chat'
-      path: '/projects/$id/chat'
-      fullPath: '/projects/$id/chat'
-      preLoaderRoute: typeof AuthenticatedProjectsIdChatRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/projects/$id/blueprint': {
-      id: '/_authenticated/projects/$id/blueprint'
-      path: '/projects/$id/blueprint'
-      fullPath: '/projects/$id/blueprint'
-      preLoaderRoute: typeof AuthenticatedProjectsIdBlueprintRouteImport
+    '/_authenticated/projects/$id/alignment': {
+      id: '/_authenticated/projects/$id/alignment'
+      path: '/projects/$id/alignment'
+      fullPath: '/projects/$id/alignment'
+      preLoaderRoute: typeof AuthenticatedProjectsIdAlignmentRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/projects/$id/approvals': {
@@ -347,25 +312,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsIdApprovalsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/projects/$id/alignment': {
-      id: '/_authenticated/projects/$id/alignment'
-      path: '/projects/$id/alignment'
-      fullPath: '/projects/$id/alignment'
-      preLoaderRoute: typeof AuthenticatedProjectsIdAlignmentRouteImport
+    '/_authenticated/projects/$id/blueprint': {
+      id: '/_authenticated/projects/$id/blueprint'
+      path: '/projects/$id/blueprint'
+      fullPath: '/projects/$id/blueprint'
+      preLoaderRoute: typeof AuthenticatedProjectsIdBlueprintRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/projects/$id/github-webhook': {
-      id: '/api/public/projects/$id/github-webhook'
-      path: '/api/public/projects/$id/github-webhook'
-      fullPath: '/api/public/projects/$id/github-webhook'
-      preLoaderRoute: typeof ApiPublicProjectsIdGithubWebhookRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/projects/$id/chat': {
+      id: '/_authenticated/projects/$id/chat'
+      path: '/projects/$id/chat'
+      fullPath: '/projects/$id/chat'
+      preLoaderRoute: typeof AuthenticatedProjectsIdChatRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/projects/$id/docs': {
+      id: '/_authenticated/projects/$id/docs'
+      path: '/projects/$id/docs'
+      fullPath: '/projects/$id/docs'
+      preLoaderRoute: typeof AuthenticatedProjectsIdDocsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/projects/$id/history': {
+      id: '/_authenticated/projects/$id/history'
+      path: '/projects/$id/history'
+      fullPath: '/projects/$id/history'
+      preLoaderRoute: typeof AuthenticatedProjectsIdHistoryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/projects/$id/members': {
+      id: '/_authenticated/projects/$id/members'
+      path: '/projects/$id/members'
+      fullPath: '/projects/$id/members'
+      preLoaderRoute: typeof AuthenticatedProjectsIdMembersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/projects/$id/repository': {
+      id: '/_authenticated/projects/$id/repository'
+      path: '/projects/$id/repository'
+      fullPath: '/projects/$id/repository'
+      preLoaderRoute: typeof AuthenticatedProjectsIdRepositoryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/public/projects/$id/drift': {
       id: '/api/public/projects/$id/drift'
       path: '/api/public/projects/$id/drift'
       fullPath: '/api/public/projects/$id/drift'
       preLoaderRoute: typeof ApiPublicProjectsIdDriftRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/projects/$id/github-webhook': {
+      id: '/api/public/projects/$id/github-webhook'
+      path: '/api/public/projects/$id/github-webhook'
+      fullPath: '/api/public/projects/$id/github-webhook'
+      preLoaderRoute: typeof ApiPublicProjectsIdGithubWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
