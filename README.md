@@ -26,8 +26,8 @@ In one line: **Git for product intent: versioned, diffable, and approval-gated.*
 | Routing | TanStack Router |
 | Data | TanStack Query, TanStack server functions |
 | Styling | Tailwind CSS v4, shadcn/ui, Radix |
-| Database | Supabase Postgres |
-| Auth | Supabase Auth |
+| Database | MongoDB (Atlas) |
+| Auth | Email/password, bcrypt + signed JWT cookie |
 | AI | Groq, Vercel AI SDK |
 | Deployment | Vercel |
 
@@ -48,9 +48,9 @@ cp .env.example .env
 Fill in:
 
 ```bash
-VITE_SUPABASE_URL=
-VITE_SUPABASE_PUBLISHABLE_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+MONGODB_URI=
+MONGODB_DB=intentos
+AUTH_SECRET=      # min 32 chars: openssl rand -hex 32
 GROQ_API_KEY=
 ```
 
@@ -66,17 +66,9 @@ Build for production:
 npm run build
 ```
 
-## Supabase Setup
+## MongoDB Setup
 
-The database schema and policies are in:
-
-```text
-supabase/migrations/
-```
-
-Apply the migrations to your Supabase project using the Supabase SQL editor or Supabase CLI.
-
-The service-role key is required only on the server. Do not expose it in client code.
+Create a free MongoDB Atlas cluster, allow your IP under Network Access, and put the connection string in `MONGODB_URI`. Collections and indexes are created automatically on first use. Access control (project owner/member rules) is enforced in `src/integrations/db/client.server.ts`.
 
 ## Deployment
 
@@ -90,11 +82,9 @@ vercel.json
 Required Vercel environment variables:
 
 ```bash
-VITE_SUPABASE_URL
-VITE_SUPABASE_PUBLISHABLE_KEY
-SUPABASE_URL
-SUPABASE_PUBLISHABLE_KEY
-SUPABASE_SERVICE_ROLE_KEY
+MONGODB_URI
+MONGODB_DB
+AUTH_SECRET
 GROQ_API_KEY
 NITRO_PRESET=vercel
 ```
@@ -105,11 +95,10 @@ NITRO_PRESET=vercel
 src/
 ├── routes/                    # File-based routes and public APIs
 ├── lib/                       # Server functions, AI logic, shared schemas
-├── integrations/supabase/     # Supabase clients and auth middleware
+├── integrations/db/           # MongoDB access layer, sessions, auth middleware
 ├── components/                # UI components
 └── styles.css                 # Tailwind theme tokens
 
-supabase/migrations/           # Database schema and RLS policies
 vscode-extension/              # Companion VS Code extension scaffold
 ```
 

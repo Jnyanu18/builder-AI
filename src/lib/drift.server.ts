@@ -1,5 +1,5 @@
 // Server-only drift engine. Reusable by createServerFn AND public API route.
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DbClient } from "@/integrations/db/client.server";
 import { DriftReportSchema } from "./intent-types";
 
 const TYPE_ALIASES: Record<string, "missing" | "unexpected" | "partial" | "violation"> = {
@@ -72,7 +72,7 @@ export type DriftRunResult =
 
 export async function runDriftForProject(
   projectId: string,
-  supabase: SupabaseClient,
+  supabase: DbClient,
   actorId: string | null,
 ): Promise<DriftRunResult> {
   const { data: blueprint, error: bpError } = await supabase

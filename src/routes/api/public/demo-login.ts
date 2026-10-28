@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
+import type { DbClient } from "@/integrations/db/client.server";
 
 const DEMO_EMAIL = "demo@intentos.app";
 const DEMO_PASSWORD = "DemoUser!2026";
@@ -17,44 +16,31 @@ export const Route = createFileRoute("/api/public/demo-login")({
       OPTIONS: async () => new Response(null, { status: 204, headers: cors }),
       POST: async () => {
         try {
-          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const { db, findUserByEmail, insertUser, setUserPassword } = await import(
+            "@/integrations/db/client.server"
+          );
+          const { hashPassword } = await import("@/integrations/db/auth.server");
 
-          // Find or create the demo user.
-          let userId: string | null = null;
-          const { data: list } = await supabaseAdmin.auth.admin.listUsers({
-            page: 1,
-            perPage: 200,
-          });
-          const existing = list?.users.find((u) => u.email === DEMO_EMAIL);
+          // Find or create the demo user, forcing the known demo password.
+          const passwordHash = await hashPassword(DEMO_PASSWORD);
+          let userId: string;
+          const existing = await findUserByEmail(DEMO_EMAIL);
           if (existing) {
             userId = existing.id;
-            // Make sure password and confirmation state are the known demo values.
-            const { error: uErr } = await supabaseAdmin.auth.admin.updateUserById(existing.id, {
-              password: DEMO_PASSWORD,
-              email_confirm: true,
-              user_metadata: { full_name: "Demo User" },
-            });
-            if (uErr) throw uErr;
+            await setUserPassword(existing.id, passwordHash);
           } else {
-            const { data: created, error: cErr } = await supabaseAdmin.auth.admin.createUser({
-              email: DEMO_EMAIL,
-              password: DEMO_PASSWORD,
-              email_confirm: true,
-              user_metadata: { full_name: "Demo User" },
-            });
-            if (cErr) throw cErr;
-            userId = created.user!.id;
+            userId = (await insertUser(DEMO_EMAIL, passwordHash)).id;
           }
 
-          const { error: profileErr } = await supabaseAdmin.from("profiles").upsert({
-            id: userId!,
+          const { error: profileErr } = await db.from("profiles").upsert({
+            id: userId,
             display_name: "Demo User",
             avatar_url: null,
           });
           if (profileErr) throw profileErr;
 
           // Idempotent seed: recreate if the previous attempt left partial demo data.
-          const { data: existingProject } = await supabaseAdmin
+          const { data: existingProject } = await db
             .from("projects")
             .select("id")
             .eq("owner_id", userId!)
@@ -62,17 +48,17 @@ export const Route = createFileRoute("/api/public/demo-login")({
             .maybeSingle();
 
           if (existingProject) {
-            const complete = await isDemoProjectComplete(supabaseAdmin, existingProject.id);
+            const complete = await isDemoProjectComplete(db, existingProject.id);
             if (!complete) {
-              const { error: dErr } = await supabaseAdmin
+              const { error: dErr } = await db
                 .from("projects")
                 .delete()
                 .eq("id", existingProject.id);
               if (dErr) throw dErr;
-              await seedDemoProject(supabaseAdmin, userId!);
+              await seedDemoProject(db, userId!);
             }
           } else {
-            await seedDemoProject(supabaseAdmin, userId!);
+            await seedDemoProject(db, userId!);
           }
 
           return Response.json({ email: DEMO_EMAIL, password: DEMO_PASSWORD }, { headers: cors });
@@ -85,7 +71,7 @@ export const Route = createFileRoute("/api/public/demo-login")({
 });
 
 async function hasRows(
-  supabaseAdmin: SupabaseClient<Database>,
+  db: DbClient,
   table:
     | "blueprint_versions"
     | "repositories"
@@ -98,7 +84,7 @@ async function hasRows(
     | "change_history",
   projectId: string,
 ) {
-  const { count, error } = await supabaseAdmin
+  const { count, error } = await db
     .from(table)
     .select("id", { count: "exact", head: true })
     .eq("project_id", projectId);
@@ -106,24 +92,24 @@ async function hasRows(
   return (count ?? 0) > 0;
 }
 
-async function isDemoProjectComplete(supabaseAdmin: SupabaseClient<Database>, projectId: string) {
+async function isDemoProjectComplete(db: DbClient, projectId: string) {
   const checks = await Promise.all([
-    hasRows(supabaseAdmin, "blueprint_versions", projectId),
-    hasRows(supabaseAdmin, "repositories", projectId),
-    hasRows(supabaseAdmin, "repository_scans", projectId),
-    hasRows(supabaseAdmin, "reality_models", projectId),
-    hasRows(supabaseAdmin, "drift_reports", projectId),
-    hasRows(supabaseAdmin, "approvals", projectId),
-    hasRows(supabaseAdmin, "docs", projectId),
-    hasRows(supabaseAdmin, "chat_messages", projectId),
-    hasRows(supabaseAdmin, "change_history", projectId),
+    hasRows(db, "blueprint_versions", projectId),
+    hasRows(db, "repositories", projectId),
+    hasRows(db, "repository_scans", projectId),
+    hasRows(db, "reality_models", projectId),
+    hasRows(db, "drift_reports", projectId),
+    hasRows(db, "approvals", projectId),
+    hasRows(db, "docs", projectId),
+    hasRows(db, "chat_messages", projectId),
+    hasRows(db, "change_history", projectId),
   ]);
   return checks.every(Boolean);
 }
 
-async function seedDemoProject(supabaseAdmin: SupabaseClient<Database>, userId: string) {
+async function seedDemoProject(db: DbClient, userId: string) {
   // 1. Project
-  const { data: project, error: projectError } = await supabaseAdmin
+  const { data: project, error: projectError } = await db
     .from("projects")
     .insert({
       owner_id: userId,
@@ -137,7 +123,7 @@ async function seedDemoProject(supabaseAdmin: SupabaseClient<Database>, userId: 
   const pid = project.id as string;
 
   // 2. Approved blueprint v1
-  const { data: bp, error: blueprintError } = await supabaseAdmin
+  const { data: bp, error: blueprintError } = await db
     .from("blueprint_versions")
     .insert({
       project_id: pid,
@@ -153,7 +139,7 @@ async function seedDemoProject(supabaseAdmin: SupabaseClient<Database>, userId: 
         { name: "Integrator", goal: "Hit a REST API to sync tasks externally" },
       ],
       functional_reqs: [
-        { name: "Email + Google sign-in", description: "", priority: "must" },
+        { name: "Email sign-in", description: "", priority: "must" },
         { name: "Create / edit / delete tasks", description: "", priority: "must" },
         { name: "Kanban board with drag-and-drop columns", description: "", priority: "must" },
         { name: "Realtime updates across collaborators", description: "", priority: "must" },
@@ -189,7 +175,7 @@ async function seedDemoProject(supabaseAdmin: SupabaseClient<Database>, userId: 
   if (blueprintError) throw blueprintError;
 
   // 3. Repository
-  const { data: repo, error: repoError } = await supabaseAdmin
+  const { data: repo, error: repoError } = await db
     .from("repositories")
     .insert({
       project_id: pid,
@@ -205,7 +191,7 @@ async function seedDemoProject(supabaseAdmin: SupabaseClient<Database>, userId: 
   if (repoError) throw repoError;
 
   // 4. Scan + reality
-  const { data: scan, error: scanError } = await supabaseAdmin
+  const { data: scan, error: scanError } = await db
     .from("repository_scans")
     .insert({
       repository_id: repo.id,
@@ -219,7 +205,7 @@ async function seedDemoProject(supabaseAdmin: SupabaseClient<Database>, userId: 
     .single();
   if (scanError) throw scanError;
 
-  const { data: reality, error: realityError } = await supabaseAdmin
+  const { data: reality, error: realityError } = await db
     .from("reality_models")
     .insert({
       scan_id: scan.id,
@@ -305,7 +291,7 @@ async function seedDemoProject(supabaseAdmin: SupabaseClient<Database>, userId: 
     },
   ];
 
-  const { data: drift, error: driftError } = await supabaseAdmin
+  const { data: drift, error: driftError } = await db
     .from("drift_reports")
     .insert({
       project_id: pid,
@@ -337,11 +323,11 @@ async function seedDemoProject(supabaseAdmin: SupabaseClient<Database>, userId: 
     decided_at: i >= 3 ? new Date().toISOString() : null,
     note: i === 3 ? "Deferred to M3" : i === 4 ? "Noise, ignored" : null,
   }));
-  const { error: approvalsError } = await supabaseAdmin.from("approvals").insert(approvalRows);
+  const { error: approvalsError } = await db.from("approvals").insert(approvalRows);
   if (approvalsError) throw approvalsError;
 
   // 7. Docs
-  const { error: docsError } = await supabaseAdmin.from("docs").insert([
+  const { error: docsError } = await db.from("docs").insert([
     {
       project_id: pid,
       created_by: userId,
@@ -474,7 +460,7 @@ async function seedDemoProject(supabaseAdmin: SupabaseClient<Database>, userId: 
   if (docsError) throw docsError;
 
   // 8. Chat
-  const { error: chatError } = await supabaseAdmin.from("chat_messages").insert([
+  const { error: chatError } = await db.from("chat_messages").insert([
     {
       project_id: pid,
       user_id: userId,
@@ -518,7 +504,7 @@ async function seedDemoProject(supabaseAdmin: SupabaseClient<Database>, userId: 
     { event_type: "approval_decided", title: "Approval: F5 deferred to M3" },
     { event_type: "approval_decided", title: "Approval: undeclared dependency dismissed" },
   ];
-  const { error: historyError } = await supabaseAdmin
+  const { error: historyError } = await db
     .from("change_history")
     .insert(histEvents.map((e) => ({ ...e, project_id: pid, actor_id: userId })));
   if (historyError) throw historyError;

@@ -1,16 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuth } from "@/integrations/db/auth-middleware";
 
 export const listChat = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) =>
     z
       .object({ projectId: z.string().uuid(), limit: z.number().int().min(1).max(500).optional() })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase
+    const { data: rows, error } = await context.db
       .from("chat_messages")
       .select("*")
       .eq("project_id", data.projectId)
@@ -23,7 +23,7 @@ export const listChat = createServerFn({ method: "GET" })
     );
     let profiles: { id: string; display_name: string | null; avatar_url: string | null }[] = [];
     if (ids.length) {
-      const { data: profs } = await context.supabase
+      const { data: profs } = await context.db
         .from("profiles")
         .select("id, display_name, avatar_url")
         .in("id", ids);
@@ -37,7 +37,7 @@ export const listChat = createServerFn({ method: "GET" })
   });
 
 export const sendChat = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -48,7 +48,7 @@ export const sendChat = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { data: inserted, error } = await context.supabase
+    const { data: inserted, error } = await context.db
       .from("chat_messages")
       .insert({
         project_id: data.projectId,
@@ -65,21 +65,21 @@ export const sendChat = createServerFn({ method: "POST" })
 
     // Build context: blueprint + drift report summary
     const [{ data: bp }, { data: report }, { data: history }] = await Promise.all([
-      context.supabase
+      context.db
         .from("blueprint_versions")
         .select("vision, version_number, is_draft")
         .eq("project_id", data.projectId)
         .order("version_number", { ascending: false })
         .limit(1)
         .maybeSingle(),
-      context.supabase
+      context.db
         .from("drift_reports")
         .select("summary, alignment_score, drift_score")
         .eq("project_id", data.projectId)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
-      context.supabase
+      context.db
         .from("chat_messages")
         .select("role, content, is_ai")
         .eq("project_id", data.projectId)
@@ -112,7 +112,7 @@ export const sendChat = createServerFn({ method: "POST" })
           Authorization: `Bearer ${groqKey}`,
         },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
+          model: (await import("./groq.server")).GROQ_DEFAULT_MODEL,
           messages: [
             {
               role: "system",
@@ -130,7 +130,7 @@ export const sendChat = createServerFn({ method: "POST" })
       aiText = `AI error: ${e instanceof Error ? e.message : String(e)}`;
     }
 
-    const { data: aiRow } = await context.supabase
+    const { data: aiRow } = await context.db
       .from("chat_messages")
       .insert({
         project_id: data.projectId,

@@ -1,12 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuth } from "@/integrations/db/auth-middleware";
 
 export const listApprovals = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase
+    const { data: rows, error } = await context.db
       .from("approvals")
       .select("*")
       .eq("project_id", data.projectId)
@@ -16,7 +16,7 @@ export const listApprovals = createServerFn({ method: "GET" })
   });
 
 export const decideApproval = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -27,7 +27,7 @@ export const decideApproval = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { data: approval, error } = await context.supabase
+    const { data: approval, error } = await context.db
       .from("approvals")
       .update({
         decision: data.decision,
@@ -43,7 +43,7 @@ export const decideApproval = createServerFn({ method: "POST" })
     // If approved, fork a new blueprint version with the finding noted in vision history.
     let newVersionId: string | null = null;
     if (data.decision === "approved") {
-      const { data: bp } = await context.supabase
+      const { data: bp } = await context.db
         .from("blueprint_versions")
         .select("*")
         .eq("project_id", approval.project_id)
@@ -60,7 +60,7 @@ export const decideApproval = createServerFn({ method: "POST" })
           rationale: finding.description ?? "",
         });
 
-        const { data: created } = await context.supabase
+        const { data: created } = await context.db
           .from("blueprint_versions")
           .insert({
             project_id: approval.project_id,
@@ -81,7 +81,7 @@ export const decideApproval = createServerFn({ method: "POST" })
           .single();
         if (created) {
           newVersionId = created.id;
-          await context.supabase
+          await context.db
             .from("approvals")
             .update({ resulting_blueprint_version_id: created.id })
             .eq("id", approval.id);
@@ -90,7 +90,7 @@ export const decideApproval = createServerFn({ method: "POST" })
     }
 
     const finding = approval.finding as { title?: string };
-    await context.supabase.from("change_history").insert({
+    await context.db.from("change_history").insert({
       project_id: approval.project_id,
       event_type: data.decision === "approved" ? "change_approved" : "change_rejected",
       title: `${data.decision === "approved" ? "Approved" : "Rejected"}: ${finding.title ?? "drift item"}`,

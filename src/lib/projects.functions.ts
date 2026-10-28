@@ -1,11 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuth } from "@/integrations/db/auth-middleware";
 
 export const listProjects = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+    const { data, error } = await context.db
       .from("projects")
       .select("*")
       .order("updated_at", { ascending: false });
@@ -14,10 +14,10 @@ export const listProjects = createServerFn({ method: "GET" })
   });
 
 export const getProject = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: project, error } = await context.supabase
+    const { data: project, error } = await context.db
       .from("projects")
       .select("*")
       .eq("id", data.id)
@@ -28,7 +28,7 @@ export const getProject = createServerFn({ method: "GET" })
   });
 
 export const createProject = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -38,7 +38,7 @@ export const createProject = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { data: project, error } = await context.supabase
+    const { data: project, error } = await context.db
       .from("projects")
       .insert({ name: data.name, description: data.description, owner_id: context.userId })
       .select()
@@ -46,7 +46,7 @@ export const createProject = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     // Seed draft blueprint v1
-    const { error: bpError } = await context.supabase.from("blueprint_versions").insert({
+    const { error: bpError } = await context.db.from("blueprint_versions").insert({
       project_id: project.id,
       version_number: 1,
       vision: "",
@@ -54,7 +54,7 @@ export const createProject = createServerFn({ method: "POST" })
     });
     if (bpError) throw new Error(bpError.message);
 
-    await context.supabase.from("change_history").insert({
+    await context.db.from("change_history").insert({
       project_id: project.id,
       event_type: "project_created",
       title: `Project "${project.name}" created`,
@@ -65,10 +65,10 @@ export const createProject = createServerFn({ method: "POST" })
   });
 
 export const deleteProject = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("projects").delete().eq("id", data.id);
+    const { error } = await context.db.from("projects").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

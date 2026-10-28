@@ -11,8 +11,8 @@ async function authorize(projectId: string, request: Request) {
   const token = auth.replace(/^Bearer\s+/i, "").trim();
   if (!token)
     return { error: new Response("Missing bearer token", { status: 401, headers: cors }) };
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
+  const { db } = await import("@/integrations/db/client.server");
+  const { data, error } = await db
     .from("projects")
     .select("id, api_token, owner_id, name")
     .eq("id", projectId)
@@ -21,7 +21,7 @@ async function authorize(projectId: string, request: Request) {
     return { error: new Response("Project not found", { status: 404, headers: cors }) };
   if (data.api_token !== token)
     return { error: new Response("Invalid token", { status: 403, headers: cors }) };
-  return { project: data, supabaseAdmin };
+  return { project: data, db };
 }
 
 export const Route = createFileRoute("/api/public/projects/$id/drift")({
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/public/projects/$id/drift")({
       GET: async ({ request, params }) => {
         const a = await authorize(params.id, request);
         if ("error" in a) return a.error;
-        const { data } = await a.supabaseAdmin
+        const { data } = await a.db
           .from("drift_reports")
           .select("*")
           .eq("project_id", params.id)
@@ -47,7 +47,7 @@ export const Route = createFileRoute("/api/public/projects/$id/drift")({
         if ("error" in a) return a.error;
         try {
           const { runDriftForProject } = await import("@/lib/drift.server");
-          const result = await runDriftForProject(params.id, a.supabaseAdmin, a.project.owner_id);
+          const result = await runDriftForProject(params.id, a.db, a.project.owner_id);
           return Response.json(result, {
             status: "ok" in result && result.ok ? 200 : 409,
             headers: cors,

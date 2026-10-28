@@ -1,15 +1,6 @@
 import { createStart, createMiddleware } from "@tanstack/react-start";
 
-if (typeof window === "undefined" && typeof globalThis.WebSocket === "undefined") {
-  import("ws").then((wsModule) => {
-    globalThis.WebSocket = (wsModule.default || wsModule) as any;
-  }).catch((err) => {
-    console.error("Failed to load ws polyfill:", err);
-  });
-}
-
 import { renderErrorPage } from "./lib/error-page";
-import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {
@@ -27,6 +18,5 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
 });
 
 export const startInstance = createStart(() => ({
-  functionMiddleware: [attachSupabaseAuth],
   requestMiddleware: [errorMiddleware],
 }));

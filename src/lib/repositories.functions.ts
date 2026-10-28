@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuth } from "@/integrations/db/auth-middleware";
 import { RealityModelSchema } from "./intent-types";
 
 // Parse https://github.com/owner/repo[.git] or owner/repo.
@@ -50,10 +50,10 @@ async function ghRaw(path: string, token?: string | null): Promise<string | null
 }
 
 export const getRepository = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase
+    const { data: rows, error } = await context.db
       .from("repositories")
       .select(
         "id, project_id, github_owner, github_repo, branch, last_scan_at, last_commit_sha, status, created_at, updated_at",
@@ -65,7 +65,7 @@ export const getRepository = createServerFn({ method: "GET" })
   });
 
 export const connectRepository = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -88,7 +88,7 @@ export const connectRepository = createServerFn({ method: "POST" })
     }
 
     // Upsert
-    const { data: existing } = await context.supabase
+    const { data: existing } = await context.db
       .from("repositories")
       .select("id")
       .eq("project_id", data.projectId)
@@ -105,7 +105,7 @@ export const connectRepository = createServerFn({ method: "POST" })
 
     let result;
     if (existing) {
-      const r = await context.supabase
+      const r = await context.db
         .from("repositories")
         .update(payload)
         .eq("id", existing.id)
@@ -114,12 +114,12 @@ export const connectRepository = createServerFn({ method: "POST" })
       if (r.error) throw new Error(r.error.message);
       result = r.data;
     } else {
-      const r = await context.supabase.from("repositories").insert(payload).select().single();
+      const r = await context.db.from("repositories").insert(payload).select().single();
       if (r.error) throw new Error(r.error.message);
       result = r.data;
     }
 
-    await context.supabase.from("change_history").insert({
+    await context.db.from("change_history").insert({
       project_id: data.projectId,
       event_type: "repository_connected",
       title: `Connected ${owner}/${repo}`,
@@ -131,10 +131,10 @@ export const connectRepository = createServerFn({ method: "POST" })
   });
 
 export const listScans = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase
+    const { data: rows, error } = await context.db
       .from("repository_scans")
       .select("id, status, commit_sha, started_at, finished_at, error")
       .eq("project_id", data.projectId)
@@ -145,10 +145,10 @@ export const listScans = createServerFn({ method: "GET" })
   });
 
 export const scanRepository = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: repo, error: rErr } = await context.supabase
+    const { data: repo, error: rErr } = await context.db
       .from("repositories")
       .select("*")
       .eq("project_id", data.projectId)
@@ -156,7 +156,7 @@ export const scanRepository = createServerFn({ method: "POST" })
     if (rErr) throw new Error(rErr.message);
     if (!repo) throw new Error("Connect a repository first.");
 
-    const { data: scan, error: sErr } = await context.supabase
+    const { data: scan, error: sErr } = await context.db
       .from("repository_scans")
       .insert({
         repository_id: repo.id,
@@ -241,7 +241,7 @@ export const scanRepository = createServerFn({ method: "POST" })
       };
 
       // Persist raw scan
-      await context.supabase
+      await context.db
         .from("repository_scans")
         .update({
           status: "succeeded",
@@ -305,7 +305,7 @@ export const scanRepository = createServerFn({ method: "POST" })
         );
       }
 
-      const { data: realityRow, error: realErr } = await context.supabase
+      const { data: realityRow, error: realErr } = await context.db
         .from("reality_models")
         .insert({
           scan_id: scan.id,
@@ -316,12 +316,12 @@ export const scanRepository = createServerFn({ method: "POST" })
         .single();
       if (realErr) throw new Error(realErr.message);
 
-      await context.supabase
+      await context.db
         .from("repositories")
         .update({ last_scan_at: new Date().toISOString(), last_commit_sha: commitSha })
         .eq("id", repo.id);
 
-      await context.supabase.from("change_history").insert({
+      await context.db.from("change_history").insert({
         project_id: data.projectId,
         event_type: "repository_scanned",
         title: `Scanned ${repo.github_owner}/${repo.github_repo} @ ${commitSha.slice(0, 7)}`,
@@ -331,7 +331,7 @@ export const scanRepository = createServerFn({ method: "POST" })
 
       return { scanId: scan.id, realityModelId: realityRow.id, commitSha };
     } catch (e) {
-      await context.supabase
+      await context.db
         .from("repository_scans")
         .update({
           status: "failed",

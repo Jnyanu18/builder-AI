@@ -1,11 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { Logo } from "@/components/logo";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { bypassSignup } from "@/lib/auth.functions";
+import { getCurrentUser, signIn, signUp } from "@/lib/auth.functions";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -15,30 +13,29 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const signupFn = useServerFn(bypassSignup);
+  const signUpFn = useServerFn(signUp);
+  const signInFn = useServerFn(signIn);
+  const currentUserFn = useServerFn(getCurrentUser);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: "/dashboard", replace: true });
+    currentUserFn().then((user) => {
+      if (user) navigate({ to: "/dashboard", replace: true });
     });
-  }, [navigate]);
+  }, [navigate, currentUserFn]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
       if (mode === "signup") {
-        await signupFn({ data: { email, password } });
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        await signUpFn({ data: { email, password } });
         toast.success("Account created. Signing you in…");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        await signInFn({ data: { email, password } });
       }
       navigate({ to: "/dashboard", replace: true });
     } catch (err) {
@@ -46,18 +43,6 @@ function AuthPage() {
     } finally {
       setLoading(false);
     }
-  }
-
-  async function handleGoogle() {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      toast.error(result.error.message);
-      return;
-    }
-    if (result.redirected) return;
-    navigate({ to: "/dashboard", replace: true });
   }
 
   return (
@@ -76,24 +61,7 @@ function AuthPage() {
               : "Start verifying your software intent."}
           </p>
 
-          <button
-            onClick={handleGoogle}
-            className="mt-6 w-full inline-flex items-center justify-center gap-3 rounded-lg border border-border bg-background/40 px-4 py-2.5 text-sm font-medium hover:bg-accent/40 transition-colors"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 24 24">
-              <path
-                fill="currentColor"
-                d="M21.35 11.1H12v3.2h5.35c-.23 1.4-1.7 4.1-5.35 4.1-3.22 0-5.85-2.66-5.85-5.95s2.63-5.95 5.85-5.95c1.83 0 3.06.78 3.76 1.45l2.57-2.48C16.7 4.07 14.55 3 12 3 6.92 3 2.8 7.07 2.8 12s4.12 9 9.2 9c5.31 0 8.83-3.73 8.83-8.98 0-.6-.06-1.05-.13-1.5z"
-              />
-            </svg>
-            Continue with Google
-          </button>
-
-          <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
-            <div className="h-px flex-1 bg-border" /> OR <div className="h-px flex-1 bg-border" />
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-3">
+          <form onSubmit={handleSubmit} className="mt-6 space-y-3">
             <input
               type="email"
               required
@@ -140,11 +108,7 @@ function AuthPage() {
                 const res = await fetch("/api/public/demo-login", { method: "POST" });
                 const json = await res.json();
                 if (!res.ok) throw new Error(json.error || "Demo login failed");
-                const { error } = await supabase.auth.signInWithPassword({
-                  email: json.email,
-                  password: json.password,
-                });
-                if (error) throw error;
+                await signInFn({ data: { email: json.email, password: json.password } });
                 toast.success(
                   "Signed in as demo user. Open the seeded project to see the full flow.",
                 );

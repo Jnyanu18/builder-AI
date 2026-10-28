@@ -19,11 +19,11 @@ export const Route = createFileRoute("/api/public/projects/$id/github-webhook")(
         const signature = request.headers.get("x-hub-signature-256") ?? "";
         const event = request.headers.get("x-github-event") ?? "";
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { db } = await import("@/integrations/db/client.server");
 
-        const { data: repo, error } = await supabaseAdmin
+        const { data: repo, error } = await db
           .from("repositories")
-          .select("id, project_id, branch, webhook_secret, projects!inner(owner_id)")
+          .select("id, project_id, branch, webhook_secret")
           .eq("project_id", projectId)
           .maybeSingle();
         if (error || !repo) return new Response("Repository not connected", { status: 404 });
@@ -54,9 +54,14 @@ export const Route = createFileRoute("/api/public/projects/$id/github-webhook")(
           return Response.json({ ok: true, skipped: "other-branch", ref: payload.ref });
         }
 
-        const ownerId = (repo.projects as unknown as { owner_id: string }).owner_id;
+        const { data: project } = await db
+          .from("projects")
+          .select("owner_id")
+          .eq("id", projectId)
+          .maybeSingle();
+        const ownerId = project?.owner_id as string;
 
-        await supabaseAdmin.from("change_history").insert({
+        await db.from("change_history").insert({
           project_id: projectId,
           event_type: "github_push",
           title: `Push received on ${branch}${payload.after ? ` (${payload.after.slice(0, 7)})` : ""}`,
@@ -69,7 +74,7 @@ export const Route = createFileRoute("/api/public/projects/$id/github-webhook")(
         // and the webhook will keep drift fresh on every subsequent push.)
         try {
           const { runDriftForProject } = await import("@/lib/drift.server");
-          const result = await runDriftForProject(projectId, supabaseAdmin, ownerId);
+          const result = await runDriftForProject(projectId, db, ownerId);
           return Response.json({ ok: true, drift: result });
         } catch (e) {
           return Response.json({ ok: false, message: (e as Error).message }, { status: 500 });

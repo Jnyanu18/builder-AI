@@ -1,21 +1,21 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuth } from "@/integrations/db/auth-middleware";
 
 const projectIdInput = z.object({ projectId: z.string().uuid() });
 
 export const listMembers = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => projectIdInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: members, error } = await context.supabase
+    const { data: members, error } = await context.db
       .from("project_members")
       .select("id, user_id, role, created_at")
       .eq("project_id", data.projectId);
     if (error) throw new Error(error.message);
 
     // owner from projects
-    const { data: project } = await context.supabase
+    const { data: project } = await context.db
       .from("projects")
       .select("owner_id")
       .eq("id", data.projectId)
@@ -30,7 +30,7 @@ export const listMembers = createServerFn({ method: "GET" })
 
     let profiles: { id: string; display_name: string | null; avatar_url: string | null }[] = [];
     if (ids.length) {
-      const { data: profs } = await context.supabase
+      const { data: profs } = await context.db
         .from("profiles")
         .select("id, display_name, avatar_url")
         .in("id", ids);
@@ -60,10 +60,10 @@ export const listMembers = createServerFn({ method: "GET" })
   });
 
 export const listInvites = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => projectIdInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase
+    const { data: rows, error } = await context.db
       .from("project_invites")
       .select("*")
       .eq("project_id", data.projectId)
@@ -74,7 +74,7 @@ export const listInvites = createServerFn({ method: "GET" })
   });
 
 export const inviteMember = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -85,14 +85,12 @@ export const inviteMember = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
     // Find user by email
-    const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    const found = list?.users.find((u) => (u.email ?? "").toLowerCase() === data.email);
+    const { findUserByEmail } = await import("@/integrations/db/client.server");
+    const found = await findUserByEmail(data.email);
 
     if (found) {
-      const { error } = await context.supabase
+      const { error } = await context.db
         .from("project_members")
         .upsert(
           { project_id: data.projectId, user_id: found.id, role: data.role },
@@ -102,7 +100,7 @@ export const inviteMember = createServerFn({ method: "POST" })
       return { added: true, email: data.email };
     }
 
-    const { error } = await context.supabase.from("project_invites").upsert(
+    const { error } = await context.db.from("project_invites").upsert(
       {
         project_id: data.projectId,
         email: data.email,
@@ -116,12 +114,12 @@ export const inviteMember = createServerFn({ method: "POST" })
   });
 
 export const removeMember = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) =>
     z.object({ projectId: z.string().uuid(), userId: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
+    const { error } = await context.db
       .from("project_members")
       .delete()
       .eq("project_id", data.projectId)
@@ -131,26 +129,25 @@ export const removeMember = createServerFn({ method: "POST" })
   });
 
 export const acceptPendingInvites = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: userRes } = await supabaseAdmin.auth.admin.getUserById(context.userId);
-    const email = userRes?.user?.email?.toLowerCase();
+    const { db, findUserById } = await import("@/integrations/db/client.server");
+    const email = (await findUserById(context.userId))?.email?.toLowerCase();
     if (!email) return { accepted: 0 };
-    const { data: invites } = await supabaseAdmin
+    const { data: invites } = await db
       .from("project_invites")
       .select("*")
       .eq("email", email)
       .is("accepted_at", null);
     if (!invites?.length) return { accepted: 0 };
     for (const inv of invites) {
-      await supabaseAdmin
+      await db
         .from("project_members")
         .upsert(
           { project_id: inv.project_id, user_id: context.userId, role: inv.role },
           { onConflict: "project_id,user_id" },
         );
-      await supabaseAdmin
+      await db
         .from("project_invites")
         .update({ accepted_at: new Date().toISOString() })
         .eq("id", inv.id);

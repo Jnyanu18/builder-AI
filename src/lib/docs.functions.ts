@@ -1,12 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuth } from "@/integrations/db/auth-middleware";
 
 export const listDocs = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase
+    const { data: rows, error } = await context.db
       .from("docs")
       .select("id, title, icon, parent_id, position, updated_at")
       .eq("project_id", data.projectId)
@@ -16,10 +16,10 @@ export const listDocs = createServerFn({ method: "GET" })
   });
 
 export const getDoc = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await context.db
       .from("docs")
       .select("*")
       .eq("id", data.id)
@@ -29,7 +29,7 @@ export const getDoc = createServerFn({ method: "GET" })
   });
 
 export const createDoc = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -40,7 +40,7 @@ export const createDoc = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await context.db
       .from("docs")
       .insert({
         project_id: data.projectId,
@@ -55,7 +55,7 @@ export const createDoc = createServerFn({ method: "POST" })
   });
 
 export const updateDoc = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -71,7 +71,7 @@ export const updateDoc = createServerFn({ method: "POST" })
     if (data.title !== undefined) patch.title = data.title;
     if (data.icon !== undefined) patch.icon = data.icon;
     if (data.content !== undefined) patch.content = data.content;
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await context.db
       .from("docs")
       .update(patch as never)
       .eq("id", data.id)
@@ -82,10 +82,10 @@ export const updateDoc = createServerFn({ method: "POST" })
   });
 
 export const deleteDoc = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("docs").delete().eq("id", data.id);
+    const { error } = await context.db.from("docs").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

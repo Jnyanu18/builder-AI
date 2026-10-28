@@ -1,17 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuth } from "@/integrations/db/auth-middleware";
 
 /**
  * Returns the status of every onboarding step for a project, so the Overview
  * page can render a checklist and a "next action" CTA.
  */
 export const getProjectOverview = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const projectId = data.projectId;
-    const { supabase } = context;
+    const { db: supabase } = context;
 
     const [project, blueprintDraft, blueprintApproved, repo, reality, drift, pending] =
       await Promise.all([
@@ -76,12 +76,12 @@ export const getProjectOverview = createServerFn({ method: "GET" })
  * members already, but we still mask the values in the UI.
  */
 export const getRepoSecrets = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const [proj, repo] = await Promise.all([
-      context.supabase.from("projects").select("api_token").eq("id", data.projectId).maybeSingle(),
-      context.supabase
+      context.db.from("projects").select("api_token").eq("id", data.projectId).maybeSingle(),
+      context.db
         .from("repositories")
         .select("webhook_secret")
         .eq("project_id", data.projectId)

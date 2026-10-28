@@ -2,8 +2,8 @@
 // Used for: drift analysis, repo scan reality model, chat assistant.
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
-/** Default Groq model for production. Fast + strong reasoning. */
-export const GROQ_DEFAULT_MODEL = "llama-3.3-70b-versatile";
+/** Default Groq model for production. Free-tier Groq model. */
+export const GROQ_DEFAULT_MODEL = "openai/gpt-oss-120b";
 
 export function createGroqProvider(apiKey: string) {
   return createOpenAICompatible({

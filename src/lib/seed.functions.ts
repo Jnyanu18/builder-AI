@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuth } from "@/integrations/db/auth-middleware";
 
 /**
  * If the signed-in user has zero projects, create a sample "Welcome to IntentOS"
@@ -7,9 +7,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  * Returns the seeded project id (or null if user already has projects).
  */
 export const seedSampleProjectIfEmpty = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
+    const { db: supabase, userId } = context;
 
     const { count, error: cErr } = await supabase
       .from("projects")

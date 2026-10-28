@@ -1,12 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuth } from "@/integrations/db/auth-middleware";
 
 export const getLatestDriftReport = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase
+    const { data: rows, error } = await context.db
       .from("drift_reports")
       .select("*")
       .eq("project_id", data.projectId)
@@ -17,22 +17,22 @@ export const getLatestDriftReport = createServerFn({ method: "GET" })
   });
 
 export const runDriftAnalysis = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { runDriftForProject } = await import("./drift.server");
     try {
-      return await runDriftForProject(data.projectId, context.supabase, context.userId);
+      return await runDriftForProject(data.projectId, context.db, context.userId);
     } catch (e) {
       return { ok: false, message: (e as Error).message };
     }
   });
 
 export const getProjectApiToken = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await context.db
       .from("projects")
       .select("api_token")
       .eq("id", data.projectId)

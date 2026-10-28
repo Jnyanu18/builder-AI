@@ -10,7 +10,8 @@ import {
   FolderOpen,
 } from "lucide-react";
 import { Logo } from "./logo";
-import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { signOut as signOutFn } from "@/lib/auth.functions";
 import { useQueryClient } from "@tanstack/react-query";
 
 export function AppSidebar({ userEmail }: { userEmail?: string }) {
@@ -18,10 +19,12 @@ export function AppSidebar({ userEmail }: { userEmail?: string }) {
   const queryClient = useQueryClient();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
+  const signOutServer = useServerFn(signOutFn);
+
   async function signOut() {
     await queryClient.cancelQueries();
     queryClient.clear();
-    await supabase.auth.signOut();
+    await signOutServer();
     navigate({ to: "/auth", replace: true });
   }
 

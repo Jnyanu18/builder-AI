@@ -7,7 +7,6 @@ import { ProjectTabs } from "@/components/project-tabs";
 import { useEffect, useRef, useState } from "react";
 import { Send, Sparkles, Bot } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/projects/$id/chat")({
   head: () => ({ meta: [{ title: "Chat — IntentOS" }] }),
@@ -42,25 +41,10 @@ function ChatPage() {
     inputRef.current?.focus();
   }, [id]);
 
+  // No realtime channel anymore: poll so other members' messages show up.
   useEffect(() => {
-    const ch = supabase
-      .channel(`chat:${id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "chat_messages",
-          filter: `project_id=eq.${id}`,
-        },
-        () => {
-          qc.invalidateQueries({ queryKey: ["chat", id] });
-        },
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
+    const t = setInterval(() => qc.invalidateQueries({ queryKey: ["chat", id] }), 4000);
+    return () => clearInterval(t);
   }, [id, qc]);
 
   const send = useMutation({

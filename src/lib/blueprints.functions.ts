@@ -1,13 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuth } from "@/integrations/db/auth-middleware";
 import { BlueprintDraftSchema } from "./intent-types";
 
 export const listBlueprintVersions = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase
+    const { data: rows, error } = await context.db
       .from("blueprint_versions")
       .select("*")
       .eq("project_id", data.projectId)
@@ -17,10 +17,10 @@ export const listBlueprintVersions = createServerFn({ method: "GET" })
   });
 
 export const getLatestBlueprint = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase
+    const { data: rows, error } = await context.db
       .from("blueprint_versions")
       .select("*")
       .eq("project_id", data.projectId)
@@ -31,10 +31,10 @@ export const getLatestBlueprint = createServerFn({ method: "GET" })
   });
 
 export const getLatestApprovedBlueprint = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase
+    const { data: rows, error } = await context.db
       .from("blueprint_versions")
       .select("*")
       .eq("project_id", data.projectId)
@@ -46,7 +46,7 @@ export const getLatestApprovedBlueprint = createServerFn({ method: "GET" })
   });
 
 export const saveBlueprintDraft = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -57,7 +57,7 @@ export const saveBlueprintDraft = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     // Find current draft, else create a new version above the latest.
-    const { data: existing } = await context.supabase
+    const { data: existing } = await context.db
       .from("blueprint_versions")
       .select("*")
       .eq("project_id", data.projectId)
@@ -66,7 +66,7 @@ export const saveBlueprintDraft = createServerFn({ method: "POST" })
       .limit(1);
 
     if (existing && existing.length > 0) {
-      const { data: updated, error } = await context.supabase
+      const { data: updated, error } = await context.db
         .from("blueprint_versions")
         .update({
           vision: data.draft.vision,
@@ -86,7 +86,7 @@ export const saveBlueprintDraft = createServerFn({ method: "POST" })
     }
 
     // No draft — create one above the highest version.
-    const { data: latest } = await context.supabase
+    const { data: latest } = await context.db
       .from("blueprint_versions")
       .select("version_number")
       .eq("project_id", data.projectId)
@@ -94,7 +94,7 @@ export const saveBlueprintDraft = createServerFn({ method: "POST" })
       .limit(1);
     const nextVersion = (latest?.[0]?.version_number ?? 0) + 1;
 
-    const { data: created, error } = await context.supabase
+    const { data: created, error } = await context.db
       .from("blueprint_versions")
       .insert({
         project_id: data.projectId,
@@ -116,10 +116,10 @@ export const saveBlueprintDraft = createServerFn({ method: "POST" })
   });
 
 export const approveBlueprint = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ versionId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: version, error } = await context.supabase
+    const { data: version, error } = await context.db
       .from("blueprint_versions")
       .update({
         is_draft: false,
@@ -131,7 +131,7 @@ export const approveBlueprint = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
-    await context.supabase.from("change_history").insert({
+    await context.db.from("change_history").insert({
       project_id: version.project_id,
       event_type: "blueprint_approved",
       title: `Blueprint V${version.version_number} approved`,

@@ -1,12 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuth } from "@/integrations/db/auth-middleware";
 
 export const listHistory = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase
+    const { data: rows, error } = await context.db
       .from("change_history")
       .select("*")
       .eq("project_id", data.projectId)
@@ -17,25 +17,25 @@ export const listHistory = createServerFn({ method: "GET" })
   });
 
 export const getDashboardData = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const [report, approvals, repo, bp] = await Promise.all([
-      context.supabase
+      context.db
         .from("drift_reports")
         .select("*")
         .eq("project_id", data.projectId)
         .order("created_at", { ascending: false })
         .limit(1)
         .then((r) => r.data?.[0] ?? null),
-      context.supabase.from("approvals").select("id, decision").eq("project_id", data.projectId),
-      context.supabase
+      context.db.from("approvals").select("id, decision").eq("project_id", data.projectId),
+      context.db
         .from("repositories")
         .select("github_owner, github_repo, branch, last_scan_at, last_commit_sha, status")
         .eq("project_id", data.projectId)
         .maybeSingle()
         .then((r) => r.data),
-      context.supabase
+      context.db
         .from("blueprint_versions")
         .select("version_number, is_draft, approved_at")
         .eq("project_id", data.projectId)
