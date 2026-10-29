@@ -9,6 +9,12 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 export default defineConfig({
   nitro: {
     preset: "vercel",
+    // Keep the MongoDB driver out of the bundle: its CommonJS `require("crypto")`
+    // fails inside the bundled ES module. Nitro traces it into the function instead.
+    traceDeps: ["mongodb"],
+  },
+  vite: {
+    ssr: { external: ["mongodb"], noExternal: [] },
   },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
